@@ -260,4 +260,33 @@ describe('TaskManager', () => {
 
     manager.dispose();
   });
+
+  it('should retain terminating state across onDidEndTaskProcess until onDidEndTask', async () => {
+    const manager = new TaskManager(mockState as unknown as vscode.Memento);
+    const task = new MockTask({ type: 'shell' }, 1, 'Long Task', 'npm');
+    mockEnv.mockTasks.setTasks([task]);
+
+    const execution = await manager.executeTask(task as unknown as vscode.Task);
+    assert.strictEqual(manager.isRunning(task as unknown as vscode.Task), true);
+
+    await manager.stopTask(task as unknown as vscode.Task);
+    assert.strictEqual(manager.isRunning(task as unknown as vscode.Task), false);
+
+    // Process ends, but VS Code has not yet removed task from taskExecutions
+    mockEnv.mockTasks.onDidEndTaskProcessEmitter.fire({
+      execution: execution as any,
+      exitCode: 0,
+    });
+
+    // Should still report not running (no flicker to true)
+    assert.strictEqual(manager.isRunning(task as unknown as vscode.Task), false);
+
+    // Task completely ends
+    mockEnv.mockTasks.onDidEndTaskEmitter.fire({
+      execution: execution as any,
+    });
+
+    assert.strictEqual(manager.isRunning(task as unknown as vscode.Task), false);
+    manager.dispose();
+  });
 });

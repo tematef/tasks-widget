@@ -263,7 +263,12 @@ export class QuickPickController implements vscode.Disposable {
     }
 
     const trimmedLabel = label.trim();
-    const existing = await this.taskConfigManager.readTasksJson();
+    let existing;
+    try {
+      existing = await this.taskConfigManager.readTasksJson();
+    } catch {
+      // Proceed with undefined existing config; addTaskDefinition handles I/O errors
+    }
     const taskNameExists = existing?.parsed?.tasks?.some(
       (t) => typeof t.label === 'string' && t.label.toLowerCase() === trimmedLabel.toLowerCase()
     );

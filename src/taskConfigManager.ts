@@ -132,7 +132,13 @@ export function insertOrUpdateTaskInJson(jsonContent: string, task: TaskConfigDe
   }
 
   const tasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
-  const existingIndex = tasks.findIndex((t: any) => t && t.label === task.label);
+  const existingIndex = tasks.findIndex(
+    (t: any) =>
+      t &&
+      typeof t.label === 'string' &&
+      typeof task.label === 'string' &&
+      t.label.toLowerCase() === task.label.toLowerCase()
+  );
 
   const editPath = existingIndex >= 0 ? ['tasks', existingIndex] : Array.isArray(parsed.tasks) ? ['tasks', -1] : ['tasks'];
   const editVal = Array.isArray(parsed.tasks) || existingIndex >= 0 ? task : [task];

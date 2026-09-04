@@ -234,6 +234,25 @@ describe('Task Insertion and Updates', () => {
     assert.strictEqual((task as any).script, undefined);
     assert.strictEqual(task.group, undefined);
   });
+
+  it('should update existing task when labels match case-insensitively', () => {
+    const initial = JSON.stringify({
+      version: '2.0.0',
+      tasks: [
+        { label: 'Build', type: 'shell', command: 'npm run build' },
+      ],
+    });
+    const replacementTask: TaskConfigDefinition = {
+      label: 'build',
+      type: 'shell',
+      command: 'npm run build:prod',
+    };
+    const result = insertOrUpdateTaskInJson(initial, replacementTask);
+    const parsed = parseTasksJson(result);
+    assert.strictEqual(parsed.tasks?.length, 1);
+    assert.strictEqual(parsed.tasks![0].label, 'build');
+    assert.strictEqual(parsed.tasks![0].command, 'npm run build:prod');
+  });
 });
 
 describe('Task Line and Position Resolution', () => {

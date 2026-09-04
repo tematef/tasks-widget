@@ -131,6 +131,33 @@ export class TaskManager implements vscode.Disposable {
   }
 
   /**
+   * Helper to check if two tasks match by reference, or by name and scope.
+   */
+  private matchesTask(a?: vscode.Task, b?: vscode.Task): boolean {
+    if (!a || !b) {
+      return false;
+    }
+    if (a === b) {
+      return true;
+    }
+    if (a.name !== b.name) {
+      return false;
+    }
+    if (a.scope !== undefined && b.scope !== undefined) {
+      if (typeof a.scope === 'object' && typeof b.scope === 'object') {
+        const folderA = a.scope as vscode.WorkspaceFolder;
+        const folderB = b.scope as vscode.WorkspaceFolder;
+        if (folderA.uri?.toString() !== folderB.uri?.toString()) {
+          return false;
+        }
+      } else if (a.scope !== b.scope) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * Checks whether a task (or the active task if omitted) is currently running.
    */
   public isRunning(task?: vscode.Task): boolean {
@@ -139,14 +166,15 @@ export class TaskManager implements vscode.Disposable {
       return false;
     }
 
-    const exec = this.runningExecutions.get(target.name);
-    if (exec && !this.terminatingExecutions.has(exec)) {
-      return true;
+    for (const exec of this.activeExecutions) {
+      if (this.matchesTask(exec.task, target) && !this.terminatingExecutions.has(exec)) {
+        return true;
+      }
     }
 
     if (vscode.tasks.taskExecutions && Array.isArray(vscode.tasks.taskExecutions)) {
       return vscode.tasks.taskExecutions.some(
-        (e) => e.task?.name === target.name && !this.terminatingExecutions.has(e)
+        (e) => this.matchesTask(e.task, target) && !this.terminatingExecutions.has(e)
       );
     }
 
@@ -193,13 +221,14 @@ export class TaskManager implements vscode.Disposable {
    * Executes a task, tracks its execution, and notifies state listeners.
    */
   public async executeTask(task: vscode.Task): Promise<vscode.TaskExecution> {
+    const wasRunning = Array.from(this.activeExecutions).some(
+      (ex) => this.matchesTask(ex.task, task) && !this.terminatingExecutions.has(ex)
+    );
     const execution = await vscode.tasks.executeTask(task);
+    const alreadyTracked = this.activeExecutions.has(execution);
     this.activeExecutions.add(execution);
-    const wasRunning =
-      this.runningExecutions.has(task.name) &&
-      !this.terminatingExecutions.has(this.runningExecutions.get(task.name)!);
     this.runningExecutions.set(task.name, execution);
-    if (!wasRunning) {
+    if (!wasRunning && !alreadyTracked) {
       this._onDidChangeRunningState.fire({
         task,
         execution,
@@ -243,10 +272,21 @@ export class TaskManager implements vscode.Disposable {
       return false;
     }
 
-    let execution = this.runningExecutions.get(target.name);
-    if ((!execution || this.terminatingExecutions.has(execution)) && vscode.tasks.taskExecutions && Array.isArray(vscode.tasks.taskExecutions)) {
+    let execution: vscode.TaskExecution | undefined;
+    for (const exec of this.activeExecutions) {
+      if (this.matchesTask(exec.task, target) && !this.terminatingExecutions.has(exec)) {
+        execution = exec;
+        break;
+      }
+    }
+
+    if (
+      !execution &&
+      vscode.tasks.taskExecutions &&
+      Array.isArray(vscode.tasks.taskExecutions)
+    ) {
       execution = vscode.tasks.taskExecutions.find(
-        (exec) => exec.task?.name === target.name && !this.terminatingExecutions.has(exec)
+        (exec) => this.matchesTask(exec.task, target) && !this.terminatingExecutions.has(exec)
       );
     }
 
@@ -255,13 +295,19 @@ export class TaskManager implements vscode.Disposable {
       this.activeExecutions.delete(execution);
       execution.terminate();
 
-      const remaining = Array.from(this.activeExecutions).find(
+      const remainingForName = Array.from(this.activeExecutions).find(
         (ex) => ex.task?.name === target.name && !this.terminatingExecutions.has(ex)
       );
-      if (remaining) {
-        this.runningExecutions.set(target.name, remaining);
+      if (remainingForName) {
+        this.runningExecutions.set(target.name, remainingForName);
       } else {
         this.runningExecutions.delete(target.name);
+      }
+
+      const remainingForTarget = Array.from(this.activeExecutions).find(
+        (ex) => this.matchesTask(ex.task, target) && !this.terminatingExecutions.has(ex)
+      );
+      if (!remainingForTarget) {
         this._onDidChangeRunningState.fire({
           task: target,
           execution,
@@ -321,14 +367,17 @@ export class TaskManager implements vscode.Disposable {
     if (!target) {
       return undefined;
     }
-    return (
-      this.runningExecutions.get(target.name) ??
-      (vscode.tasks.taskExecutions && Array.isArray(vscode.tasks.taskExecutions)
-        ? vscode.tasks.taskExecutions.find(
-            (exec) => exec.task?.name === target.name && !this.terminatingExecutions.has(exec)
-          )
-        : undefined)
-    );
+    for (const exec of this.activeExecutions) {
+      if (this.matchesTask(exec.task, target) && !this.terminatingExecutions.has(exec)) {
+        return exec;
+      }
+    }
+    if (vscode.tasks.taskExecutions && Array.isArray(vscode.tasks.taskExecutions)) {
+      return vscode.tasks.taskExecutions.find(
+        (exec) => this.matchesTask(exec.task, target) && !this.terminatingExecutions.has(exec)
+      );
+    }
+    return undefined;
   }
 
   /**
@@ -352,12 +401,13 @@ export class TaskManager implements vscode.Disposable {
   private registerEventListeners(): void {
     const handleStart = (e: vscode.TaskStartEvent | vscode.TaskProcessStartEvent) => {
       if (e?.execution?.task?.name) {
+        const alreadyTracked = this.activeExecutions.has(e.execution);
+        const wasRunning = Array.from(this.activeExecutions).some(
+          (ex) => this.matchesTask(ex.task, e.execution.task) && !this.terminatingExecutions.has(ex)
+        );
         this.activeExecutions.add(e.execution);
-        const wasRunning =
-          this.runningExecutions.has(e.execution.task.name) &&
-          !this.terminatingExecutions.has(this.runningExecutions.get(e.execution.task.name)!);
         this.runningExecutions.set(e.execution.task.name, e.execution);
-        if (!wasRunning) {
+        if (!wasRunning && !alreadyTracked) {
           this._onDidChangeRunningState.fire({
             task: e.execution.task,
             execution: e.execution,
@@ -367,7 +417,34 @@ export class TaskManager implements vscode.Disposable {
       }
     };
 
-    const handleEnd = (e: vscode.TaskEndEvent | vscode.TaskProcessEndEvent) => {
+    const handleProcessEnd = (e: vscode.TaskProcessEndEvent) => {
+      if (e?.execution?.task?.name) {
+        this.activeExecutions.delete(e.execution);
+        // Mark as terminating so any concurrent/pending check in vscode.tasks.taskExecutions
+        // does not consider this execution running before onDidEndTask fires
+        this.terminatingExecutions.add(e.execution);
+
+        const remaining = Array.from(this.activeExecutions).find(
+          (ex) => ex.task?.name === e.execution.task.name && !this.terminatingExecutions.has(ex)
+        );
+
+        if (remaining) {
+          this.runningExecutions.set(e.execution.task.name, remaining);
+        } else {
+          const wasRunning = this.runningExecutions.has(e.execution.task.name);
+          this.runningExecutions.delete(e.execution.task.name);
+          if (wasRunning) {
+            this._onDidChangeRunningState.fire({
+              task: e.execution.task,
+              execution: e.execution,
+              isRunning: false,
+            });
+          }
+        }
+      }
+    };
+
+    const handleTaskEnd = (e: vscode.TaskEndEvent) => {
       if (e?.execution?.task?.name) {
         this.activeExecutions.delete(e.execution);
         this.terminatingExecutions.delete(e.execution);
@@ -395,8 +472,8 @@ export class TaskManager implements vscode.Disposable {
     this.disposables.push(
       vscode.tasks.onDidStartTask(handleStart),
       vscode.tasks.onDidStartTaskProcess(handleStart),
-      vscode.tasks.onDidEndTask(handleEnd),
-      vscode.tasks.onDidEndTaskProcess(handleEnd)
+      vscode.tasks.onDidEndTask(handleTaskEnd),
+      vscode.tasks.onDidEndTaskProcess(handleProcessEnd)
     );
   }
 
