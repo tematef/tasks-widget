@@ -41,8 +41,8 @@ Build a VS Code extension that mimics IntelliJ IDEA's Run Configuration widget i
 - [x] Implement event listeners for task process lifecycle (`onDidStartTaskProcess`, `onDidEndTaskProcess`) to swap between Play and Stop dynamically.
 
 ### Task 5: QuickPick Dropdown Controller with Add and Edit Actions
-- [ ] Create `src/quickPickController.ts` to render the QuickPick dropdown with grouped tasks, item-level `$(edit)` buttons to open `tasks.json` at the task line, title bar `$(add)` button, and `Add New Task` / `Edit Tasks` menu entries.
-- [ ] Implement the interactive Add New Task flow prompting for label, command, execution type, and group.
+- [x] Create `src/quickPickController.ts` to render the QuickPick dropdown with grouped tasks, item-level `$(edit)` buttons to open `tasks.json` at the task line, title bar `$(add)` button, and `Add New Task` / `Edit Tasks` menu entries.
+- [x] Implement the interactive Add New Task flow prompting for label, command, execution type, and group.
 
 ### Task 6: Extension Entrypoint and Command Registration
 - [ ] Create `src/extension.ts` wiring all commands (`selectTask`, `runSelectedTask`, `stopSelectedTask`, `debugSelectedTask`, `addNewTask`, `editTask`, `configureTasks`) and registering disposables.

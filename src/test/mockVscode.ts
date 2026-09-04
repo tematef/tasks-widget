@@ -163,6 +163,76 @@ export class MockTaskExecution {
   }
 }
 
+export class MockThemeIcon {
+  constructor(public readonly id: string, public readonly color?: unknown) {}
+}
+
+export enum MockQuickPickItemKind {
+  Separator = -1,
+  Default = 0,
+}
+
+export class MockQuickPick<T = unknown> {
+  public title?: string;
+  public placeholder?: string;
+  public prompt?: string;
+  public value: string = '';
+  public buttons: readonly unknown[] = [];
+  public items: readonly T[] = [];
+  public selectedItems: readonly T[] = [];
+  public activeItems: readonly T[] = [];
+  public canSelectMany: boolean = false;
+  public matchOnDescription: boolean = false;
+  public matchOnDetail: boolean = false;
+  public isVisible = false;
+  public isDisposed = false;
+
+  private readonly _onDidChangeValue = new MockEventEmitter<string>();
+  public readonly onDidChangeValue = this._onDidChangeValue.event;
+
+  private readonly _onDidAccept = new MockEventEmitter<void>();
+  public readonly onDidAccept = this._onDidAccept.event;
+
+  private readonly _onDidTriggerButton = new MockEventEmitter<unknown>();
+  public readonly onDidTriggerButton = this._onDidTriggerButton.event;
+
+  private readonly _onDidTriggerItemButton = new MockEventEmitter<{ button: unknown; item: T }>();
+  public readonly onDidTriggerItemButton = this._onDidTriggerItemButton.event;
+
+  private readonly _onDidHide = new MockEventEmitter<void>();
+  public readonly onDidHide = this._onDidHide.event;
+
+  public show(): void {
+    this.isVisible = true;
+  }
+
+  public hide(): void {
+    this.isVisible = false;
+    this._onDidHide.fire();
+  }
+
+  public triggerAccept(): void {
+    this._onDidAccept.fire();
+  }
+
+  public triggerButton(button: unknown): void {
+    this._onDidTriggerButton.fire(button);
+  }
+
+  public triggerItemButton(button: unknown, item: T): void {
+    this._onDidTriggerItemButton.fire({ button, item });
+  }
+
+  public dispose(): void {
+    this.isVisible = false;
+    this.isDisposed = true;
+    this._onDidChangeValue.dispose();
+    this._onDidAccept.dispose();
+    this._onDidTriggerButton.dispose();
+    this._onDidTriggerItemButton.dispose();
+    this._onDidHide.dispose();
+  }
+}
 
 export class MockMemento {
   private storage = new Map<string, unknown>();
@@ -279,9 +349,21 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
   };
 
   const createdStatusBarItems: MockStatusBarItem[] = [];
+  const createdQuickPicks: MockQuickPick[] = [];
+  const informationMessages: string[] = [];
+  let inputBoxHandler: ((options?: unknown) => Promise<string | undefined> | string | undefined) | undefined;
+  let quickPickHandler: ((items: unknown, options?: unknown) => Promise<unknown> | unknown) | undefined;
 
   const mockWindow = {
     createdStatusBarItems,
+    createdQuickPicks,
+    informationMessages,
+    setInputBoxHandler(handler: ((options?: unknown) => Promise<string | undefined> | string | undefined) | undefined) {
+      inputBoxHandler = handler;
+    },
+    setQuickPickHandler(handler: ((items: unknown, options?: unknown) => Promise<unknown> | unknown) | undefined) {
+      quickPickHandler = handler;
+    },
     createStatusBarItem(
       idOrAlignment?: string | MockStatusBarAlignment,
       alignmentOrPriority?: MockStatusBarAlignment | number,
@@ -290,6 +372,30 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
       const item = new MockStatusBarItem(idOrAlignment, alignmentOrPriority, priority);
       createdStatusBarItems.push(item);
       return item;
+    },
+    createQuickPick<T>() {
+      const qp = new MockQuickPick<T>();
+      createdQuickPicks.push(qp as unknown as MockQuickPick);
+      return qp;
+    },
+    async showInputBox(options?: unknown): Promise<string | undefined> {
+      if (inputBoxHandler) {
+        return inputBoxHandler(options);
+      }
+      return undefined;
+    },
+    async showQuickPick(items: unknown, options?: unknown): Promise<unknown> {
+      if (quickPickHandler) {
+        return quickPickHandler(items, options);
+      }
+      if (Array.isArray(items) && items.length > 0) {
+        return items[0];
+      }
+      return undefined;
+    },
+    async showInformationMessage(message: string): Promise<string> {
+      informationMessages.push(message);
+      return message;
     },
     async showTextDocument(doc: { uri: MockUri; lineCount: number; lineAt: (i: number) => { lineNumber: number; text: string } }) {
       const editor = {
@@ -401,6 +507,8 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
     TaskScope: MockTaskScope,
     StatusBarAlignment: MockStatusBarAlignment,
     StatusBarItem: MockStatusBarItem,
+    ThemeIcon: MockThemeIcon,
+    QuickPickItemKind: MockQuickPickItemKind,
     workspace: mockWorkspace,
     window: mockWindow,
     tasks: mockTasks,
