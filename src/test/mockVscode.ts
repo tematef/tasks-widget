@@ -21,6 +21,53 @@ export enum MockTextEditorRevealType {
   AtTop = 3,
 }
 
+export enum MockStatusBarAlignment {
+  Left = 1,
+  Right = 2,
+}
+
+export class MockStatusBarItem {
+  public id?: string;
+  public alignment: MockStatusBarAlignment;
+  public priority?: number;
+  public name?: string;
+  public text: string = '';
+  public tooltip?: string;
+  public color?: string;
+  public backgroundColor?: unknown;
+  public command?: string;
+  public isVisible = false;
+  public isDisposed = false;
+
+  constructor(
+    idOrAlignment?: string | MockStatusBarAlignment,
+    alignmentOrPriority?: MockStatusBarAlignment | number,
+    priority?: number
+  ) {
+    if (typeof idOrAlignment === 'string') {
+      this.id = idOrAlignment;
+      this.alignment = (alignmentOrPriority as MockStatusBarAlignment) ?? MockStatusBarAlignment.Left;
+      this.priority = priority;
+    } else {
+      this.alignment = idOrAlignment ?? MockStatusBarAlignment.Left;
+      this.priority = alignmentOrPriority as number;
+    }
+  }
+
+  public show(): void {
+    this.isVisible = true;
+  }
+
+  public hide(): void {
+    this.isVisible = false;
+  }
+
+  public dispose(): void {
+    this.isVisible = false;
+    this.isDisposed = true;
+  }
+}
+
 export class MockUri {
   constructor(public readonly fsPath: string, public readonly scheme: string = 'file') {}
 
@@ -171,6 +218,9 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
   let lastRevealedRange: { range: MockRange; type: MockTextEditorRevealType } | undefined;
   const activeSelection: MockSelection | undefined = undefined;
 
+  const globalConfigs: Record<string, unknown> = {};
+  const onDidChangeConfigurationEmitter = new MockEventEmitter<{ affectsConfiguration: (section: string) => boolean }>();
+
   const mockWorkspace = {
     workspaceFolders: [
       {
@@ -200,29 +250,47 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
       openedDocuments.push({ uri, text });
       return doc;
     },
+    onDidChangeConfiguration: onDidChangeConfigurationEmitter.event,
+    onDidChangeConfigurationEmitter,
     getConfiguration(section?: string) {
-      const configs: Record<string, unknown> = {};
       return {
         get: <T>(key: string, defaultValue?: T): T => {
           const fullKey = section ? `${section}.${key}` : key;
-          if (fullKey in configs) {
-            return configs[fullKey] as T;
+          if (fullKey in globalConfigs) {
+            return globalConfigs[fullKey] as T;
           }
-          if (key in configs) {
-            return configs[key] as T;
+          if (key in globalConfigs) {
+            return globalConfigs[key] as T;
           }
           return defaultValue as T;
         },
         has: (_key: string) => true,
         inspect: (_key: string) => undefined,
         update: async (key: string, value: unknown) => {
-          configs[key] = value;
+          const fullKey = section ? `${section}.${key}` : key;
+          globalConfigs[fullKey] = value;
+          globalConfigs[key] = value;
+          onDidChangeConfigurationEmitter.fire({
+            affectsConfiguration: (sec: string) => section === sec || key.startsWith(sec) || fullKey.startsWith(sec),
+          });
         },
       };
     },
   };
 
+  const createdStatusBarItems: MockStatusBarItem[] = [];
+
   const mockWindow = {
+    createdStatusBarItems,
+    createStatusBarItem(
+      idOrAlignment?: string | MockStatusBarAlignment,
+      alignmentOrPriority?: MockStatusBarAlignment | number,
+      priority?: number
+    ): MockStatusBarItem {
+      const item = new MockStatusBarItem(idOrAlignment, alignmentOrPriority, priority);
+      createdStatusBarItems.push(item);
+      return item;
+    },
     async showTextDocument(doc: { uri: MockUri; lineCount: number; lineAt: (i: number) => { lineNumber: number; text: string } }) {
       const editor = {
         document: doc,
@@ -331,6 +399,8 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
     Task: MockTask,
     TaskExecution: MockTaskExecution,
     TaskScope: MockTaskScope,
+    StatusBarAlignment: MockStatusBarAlignment,
+    StatusBarItem: MockStatusBarItem,
     workspace: mockWorkspace,
     window: mockWindow,
     tasks: mockTasks,
@@ -347,6 +417,7 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
     mockDebug,
     openedDocuments,
     getLastRevealedRange: () => lastRevealedRange,
+    onDidChangeConfigurationEmitter,
   };
 }
 

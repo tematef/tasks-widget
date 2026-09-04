@@ -37,8 +37,8 @@ Build a VS Code extension that mimics IntelliJ IDEA's Run Configuration widget i
 
 
 ### Task 4: Status Bar Controller
-- [ ] Create `src/statusBar.ts` managing the three status bar items: Task Selector (`$(checklist)`), Play/Stop toggle (`$(play)` / `$(debug-stop)`), and Debug (`$(debug-alt)`).
-- [ ] Implement event listeners for task process lifecycle (`onDidStartTaskProcess`, `onDidEndTaskProcess`) to swap between Play and Stop dynamically.
+- [x] Create `src/statusBar.ts` managing the three status bar items: Task Selector (`$(checklist)`), Play/Stop toggle (`$(play)` / `$(debug-stop)`), and Debug (`$(debug-alt)`).
+- [x] Implement event listeners for task process lifecycle (`onDidStartTaskProcess`, `onDidEndTaskProcess`) to swap between Play and Stop dynamically.
 
 ### Task 5: QuickPick Dropdown Controller with Add and Edit Actions
 - [ ] Create `src/quickPickController.ts` to render the QuickPick dropdown with grouped tasks, item-level `$(edit)` buttons to open `tasks.json` at the task line, title bar `$(add)` button, and `Add New Task` / `Edit Tasks` menu entries.
