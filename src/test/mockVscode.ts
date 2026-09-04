@@ -326,10 +326,10 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
       return {
         get: <T>(key: string, defaultValue?: T): T => {
           const fullKey = section ? `${section}.${key}` : key;
-          if (fullKey in globalConfigs) {
+          if (fullKey in globalConfigs && globalConfigs[fullKey] !== undefined) {
             return globalConfigs[fullKey] as T;
           }
-          if (key in globalConfigs) {
+          if (key in globalConfigs && globalConfigs[key] !== undefined) {
             return globalConfigs[key] as T;
           }
           return defaultValue as T;
@@ -338,8 +338,13 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
         inspect: (_key: string) => undefined,
         update: async (key: string, value: unknown) => {
           const fullKey = section ? `${section}.${key}` : key;
-          globalConfigs[fullKey] = value;
-          globalConfigs[key] = value;
+          if (value === undefined) {
+            delete globalConfigs[fullKey];
+            delete globalConfigs[key];
+          } else {
+            globalConfigs[fullKey] = value;
+            globalConfigs[key] = value;
+          }
           onDidChangeConfigurationEmitter.fire({
             affectsConfiguration: (sec: string) => section === sec || key.startsWith(sec) || fullKey.startsWith(sec),
           });
@@ -378,9 +383,16 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
       createdQuickPicks.push(qp as unknown as MockQuickPick);
       return qp;
     },
-    async showInputBox(options?: unknown): Promise<string | undefined> {
+    async showInputBox(options?: { validateInput?: (val: string) => string | undefined | Promise<string | undefined> }): Promise<string | undefined> {
       if (inputBoxHandler) {
-        return inputBoxHandler(options);
+        const val = await inputBoxHandler(options);
+        if (val !== undefined && options?.validateInput) {
+          const err = await options.validateInput(val);
+          if (err) {
+            return undefined;
+          }
+        }
+        return val;
       }
       return undefined;
     },
@@ -396,6 +408,14 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
     async showInformationMessage(message: string): Promise<string> {
       informationMessages.push(message);
       return message;
+    },
+    async showErrorMessage(message: string, ..._items: unknown[]): Promise<string> {
+      informationMessages.push(message);
+      return message;
+    },
+    async showWarningMessage(message: string, ...items: string[]): Promise<string | undefined> {
+      informationMessages.push(message);
+      return items[0];
     },
     async showTextDocument(doc: { uri: MockUri; lineCount: number; lineAt: (i: number) => { lineNumber: number; text: string } }) {
       const editor = {

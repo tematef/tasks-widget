@@ -1,4 +1,4 @@
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import * as assert from 'node:assert';
 import { setupVscodeMock, MockMemento, MockTask, MockTaskExecution, MockStatusBarItem } from './mockVscode';
 
@@ -18,6 +18,12 @@ describe('StatusBarController', () => {
     memento = new MockMemento();
     taskManager = new TaskManager(memento);
     debugManager = new DebugManager();
+  });
+
+  afterEach(async () => {
+    const config = mockEnv.vscodeModule.workspace.getConfiguration(CONFIG_SECTION);
+    await config.update(CONFIG_KEYS.SHOW_DEBUG_BUTTON, undefined);
+    await config.update(CONFIG_KEYS.STATUS_BAR_PRIORITY, undefined);
   });
 
   it('should initialize with default states when no task is selected', () => {
@@ -163,6 +169,20 @@ describe('StatusBarController', () => {
     await config.update(CONFIG_KEYS.SHOW_DEBUG_BUTTON, true);
 
     assert.strictEqual(debugItem.isVisible, true);
+
+    controller.dispose();
+  });
+
+  it('should recreate status bar items with updated priority on configuration change', async () => {
+    const controller = new StatusBarController(taskManager, debugManager);
+    const oldSelectorItem = controller.getTaskSelectorItem() as unknown as MockStatusBarItem;
+
+    const config = mockEnv.vscodeModule.workspace.getConfiguration(CONFIG_SECTION);
+    await config.update(CONFIG_KEYS.STATUS_BAR_PRIORITY, 200);
+
+    const newSelectorItem = controller.getTaskSelectorItem() as unknown as MockStatusBarItem;
+    assert.strictEqual(oldSelectorItem.isDisposed, true);
+    assert.strictEqual(newSelectorItem.priority, 200);
 
     controller.dispose();
   });

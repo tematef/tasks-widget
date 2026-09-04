@@ -126,6 +126,26 @@ describe('QuickPickController', () => {
       assert.ok(taskItem);
       assert.ok(taskItem.description?.includes('Running'));
     });
+
+    it('should show No Tasks Found separator when task list is empty', () => {
+      const items = controller.buildQuickPickItems([]);
+      const noTasksSeparator = items.find((item) => item.label === 'No Tasks Found');
+      assert.ok(noTasksSeparator);
+    });
+
+    it('should display process path in detail for ProcessExecution tasks', () => {
+      const task = new MockTask(
+        { type: 'process' },
+        MockTaskScope.Workspace,
+        'custom-process',
+        'workspace',
+        { process: '/usr/local/bin/my-tool' } as any
+      );
+      const items = controller.buildQuickPickItems([task as any]);
+      const taskItem = items.find((i) => i.task?.name === 'custom-process');
+      assert.ok(taskItem);
+      assert.strictEqual(taskItem.detail, '/usr/local/bin/my-tool');
+    });
   });
 
   describe('showTaskSelector', () => {
@@ -351,6 +371,27 @@ describe('QuickPickController', () => {
         }
         return undefined;
       });
+
+      const result = await controller.addNewTaskFlow();
+      assert.strictEqual(result, undefined);
+    });
+
+    it('should reject empty or whitespace-only task name in validateInput', async () => {
+      const inputs = ['   ', 'valid-task', 'npm test'];
+      mockEnv.mockWindow.setInputBoxHandler(() => inputs.shift());
+      const picks = [{ label: 'shell' }, { label: 'none' }];
+      mockEnv.mockWindow.setQuickPickHandler(() => picks.shift());
+
+      // With our mock showInputBox validating inputs, the first '   ' will fail validation and return undefined
+      const result = await controller.addNewTaskFlow();
+      assert.strictEqual(result, undefined);
+    });
+
+    it('should reject empty or whitespace-only command in validateInput', async () => {
+      const inputs = ['valid-task', '   '];
+      mockEnv.mockWindow.setInputBoxHandler(() => inputs.shift());
+      const picks = [{ label: 'shell' }, { label: 'none' }];
+      mockEnv.mockWindow.setQuickPickHandler(() => picks.shift());
 
       const result = await controller.addNewTaskFlow();
       assert.strictEqual(result, undefined);

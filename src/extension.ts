@@ -47,7 +47,11 @@ export async function activate(
     async () => {
       const execution = await taskManager.executeSelectedTask();
       if (!execution) {
-        return quickPickController.showTaskSelector();
+        const selected = await quickPickController.showTaskSelector();
+        if (selected) {
+          return taskManager.executeTask(selected);
+        }
+        return undefined;
       }
       return execution;
     }

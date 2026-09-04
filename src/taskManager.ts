@@ -100,9 +100,11 @@ export class TaskManager implements vscode.Disposable {
     }
 
     // Persist label even if task is not immediately found (e.g. pending discovery)
+    this.activeTask = undefined;
     if (this.workspaceState) {
       await this.workspaceState.update(STORAGE_KEYS.ACTIVE_TASK_LABEL, label);
     }
+    this._onDidChangeActiveTask.fire(undefined);
     return undefined;
   }
 
@@ -169,7 +171,14 @@ export class TaskManager implements vscode.Disposable {
    * Returns whether the currently selected task is executing.
    */
   public isSelectedTaskRunning(): boolean {
-    return this.isRunning(this.activeTask);
+    if (this.activeTask) {
+      return this.isRunning(this.activeTask);
+    }
+    const label = this.getActiveTaskLabel();
+    if (label) {
+      return this.isTaskRunning(label);
+    }
+    return false;
   }
 
   /**
@@ -177,12 +186,14 @@ export class TaskManager implements vscode.Disposable {
    */
   public async executeTask(task: vscode.Task): Promise<vscode.TaskExecution> {
     const execution = await vscode.tasks.executeTask(task);
-    this.runningExecutions.set(task.name, execution);
-    this._onDidChangeRunningState.fire({
-      task,
-      execution,
-      isRunning: true,
-    });
+    if (!this.runningExecutions.has(task.name)) {
+      this.runningExecutions.set(task.name, execution);
+      this._onDidChangeRunningState.fire({
+        task,
+        execution,
+        isRunning: true,
+      });
+    }
     return execution;
   }
 
@@ -192,6 +203,16 @@ export class TaskManager implements vscode.Disposable {
   public async executeSelectedTask(): Promise<vscode.TaskExecution | undefined> {
     if (!this.activeTask) {
       await this.restoreActiveTask();
+    }
+
+    if (!this.activeTask) {
+      const label = this.getActiveTaskLabel();
+      if (label) {
+        const task = await this.getTaskByLabel(label);
+        if (task) {
+          this.activeTask = task;
+        }
+      }
     }
 
     if (!this.activeTask) {
@@ -233,7 +254,27 @@ export class TaskManager implements vscode.Disposable {
    * Stops the currently active task if running.
    */
   public async stopSelectedTask(): Promise<boolean> {
-    return this.stopTask(this.activeTask);
+    if (this.activeTask) {
+      return this.stopTask(this.activeTask);
+    }
+    const label = this.getActiveTaskLabel();
+    if (label) {
+      let execution = this.runningExecutions.get(label);
+      if (!execution && vscode.tasks.taskExecutions && Array.isArray(vscode.tasks.taskExecutions)) {
+        execution = vscode.tasks.taskExecutions.find((exec) => exec.task?.name === label);
+      }
+      if (execution) {
+        execution.terminate();
+        this.runningExecutions.delete(label);
+        this._onDidChangeRunningState.fire({
+          task: execution.task,
+          execution,
+          isRunning: false,
+        });
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -272,22 +313,28 @@ export class TaskManager implements vscode.Disposable {
     this.disposables.push(
       vscode.tasks.onDidStartTask((e) => {
         if (e?.execution?.task?.name) {
+          const wasRunning = this.runningExecutions.has(e.execution.task.name);
           this.runningExecutions.set(e.execution.task.name, e.execution);
-          this._onDidChangeRunningState.fire({
-            task: e.execution.task,
-            execution: e.execution,
-            isRunning: true,
-          });
+          if (!wasRunning) {
+            this._onDidChangeRunningState.fire({
+              task: e.execution.task,
+              execution: e.execution,
+              isRunning: true,
+            });
+          }
         }
       }),
       vscode.tasks.onDidStartTaskProcess((e) => {
         if (e?.execution?.task?.name) {
+          const wasRunning = this.runningExecutions.has(e.execution.task.name);
           this.runningExecutions.set(e.execution.task.name, e.execution);
-          this._onDidChangeRunningState.fire({
-            task: e.execution.task,
-            execution: e.execution,
-            isRunning: true,
-          });
+          if (!wasRunning) {
+            this._onDidChangeRunningState.fire({
+              task: e.execution.task,
+              execution: e.execution,
+              isRunning: true,
+            });
+          }
         }
       }),
       vscode.tasks.onDidEndTask((e) => {

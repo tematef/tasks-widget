@@ -52,6 +52,20 @@ describe('DebugManager', () => {
     manager.dispose();
   });
 
+  it('should read configurations from workspace configuration when present', async () => {
+    delete mockEnv.fsStorage[launchFilePath];
+    const testConfigs = [{ type: 'node', request: 'launch', name: 'Config From Workspace' }];
+    await vscode.workspace.getConfiguration('launch').update('configurations', testConfigs);
+
+    const manager = new DebugManager();
+    const configs = await manager.getLaunchConfigurations();
+    assert.strictEqual(configs.length, 1);
+    assert.strictEqual(configs[0].name, 'Config From Workspace');
+    manager.dispose();
+
+    await vscode.workspace.getConfiguration('launch').update('configurations', undefined);
+  });
+
   it('should match debug configuration by exact name', async () => {
     const launchJson = JSON.stringify({
       version: '0.2.0',

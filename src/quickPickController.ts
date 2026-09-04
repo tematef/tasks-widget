@@ -59,11 +59,13 @@ export class QuickPickController implements vscode.Disposable {
       const description = statusParts.length > 0 ? statusParts.join(' • ') : undefined;
 
       let detail: string | undefined;
-      const execution = task.execution as { command?: string; commandLine?: string } | undefined;
+      const execution = task.execution as { command?: string; commandLine?: string; process?: string } | undefined;
       if (execution?.commandLine) {
         detail = execution.commandLine;
       } else if (execution?.command) {
         detail = execution.command;
+      } else if (execution?.process) {
+        detail = execution.process;
       } else if (typeof task.definition?.command === 'string') {
         detail = task.definition.command;
       }
@@ -257,6 +259,22 @@ export class QuickPickController implements vscode.Disposable {
       return undefined;
     }
 
+    const trimmedLabel = label.trim();
+    const existing = await this.taskConfigManager.readTasksJson();
+    const taskNameExists = existing?.parsed?.tasks?.some(
+      (t) => t.label.toLowerCase() === trimmedLabel.toLowerCase()
+    );
+    if (taskNameExists) {
+      const choice = await vscode.window.showWarningMessage(
+        `A task named "${trimmedLabel}" already exists in tasks.json. Do you want to overwrite it?`,
+        'Overwrite',
+        'Cancel'
+      );
+      if (choice !== 'Overwrite') {
+        return undefined;
+      }
+    }
+
     // Step 2: Prompt for command
     const command = await vscode.window.showInputBox({
       title: 'Add New Task (2/4): Command',
@@ -337,7 +355,10 @@ export class QuickPickController implements vscode.Disposable {
     }
 
     // Insert task into .vscode/tasks.json
-    await this.taskConfigManager.addTaskDefinition(taskDefinition);
+    const writeResult = await this.taskConfigManager.addTaskDefinition(taskDefinition);
+    if (!writeResult) {
+      return undefined;
+    }
 
     // Set as active task
     await this.taskManager.setActiveTaskByLabel(taskDefinition.label);

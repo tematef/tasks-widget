@@ -116,10 +116,14 @@ describe('TaskManager', () => {
     assert.strictEqual(manager.isRunning(task1 as unknown as vscode.Task), true);
     assert.strictEqual(manager.isTaskRunning('Build Project'), true);
     assert.strictEqual(lastRunningState, true);
-    assert.ok(runningChangeCount > 0);
+    assert.strictEqual(runningChangeCount, 1);
 
     const trackedExecution = manager.getRunningExecution(task1 as unknown as vscode.Task);
     assert.strictEqual(trackedExecution, execution);
+
+    const runningMap = manager.getRunningExecutions();
+    assert.strictEqual(runningMap.size, 1);
+    assert.strictEqual(runningMap.get('Build Project'), execution);
 
     manager.dispose();
   });
@@ -183,6 +187,32 @@ describe('TaskManager', () => {
 
     manager.setWorkspaceState(mockState as unknown as vscode.Memento);
     assert.strictEqual(manager.getWorkspaceState(), mockState);
+    manager.dispose();
+  });
+
+  it('should synchronize pre-existing executions on TaskManager startup', async () => {
+    const exec = await mockEnv.mockTasks.executeTask(task1);
+    const manager = new TaskManager(mockState as unknown as vscode.Memento);
+    assert.strictEqual(manager.isRunning(task1 as unknown as vscode.Task), true);
+    assert.strictEqual(manager.getRunningExecutions().size, 1);
+    manager.dispose();
+    mockEnv.mockTasks.terminateExecution(exec);
+  });
+
+  it('should detect running state and stop selected task when active task is unresolved by instance', async () => {
+    await mockState.update(STORAGE_KEYS.ACTIVE_TASK_LABEL, 'Unresolved Task');
+    const manager = new TaskManager(mockState as unknown as vscode.Memento);
+    assert.strictEqual(manager.getActiveTask(), undefined);
+    assert.strictEqual(manager.getActiveTaskLabel(), 'Unresolved Task');
+
+    const fakeTask = new MockTask({ type: 'shell' }, 1, 'Unresolved Task', 'workspace');
+    const exec = await mockEnv.mockTasks.executeTask(fakeTask);
+
+    assert.strictEqual(manager.isSelectedTaskRunning(), true);
+    const stopped = await manager.stopSelectedTask();
+    assert.strictEqual(stopped, true);
+    assert.strictEqual(manager.isSelectedTaskRunning(), false);
+
     manager.dispose();
   });
 });

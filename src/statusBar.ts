@@ -10,15 +10,21 @@ import { TaskManager } from './taskManager';
  * 3. Debug item: displays $(debug-alt) to initiate debugging for the active task.
  */
 export class StatusBarController implements vscode.Disposable {
-  private taskSelectorItem: vscode.StatusBarItem;
-  private playStopItem: vscode.StatusBarItem;
-  private debugItem: vscode.StatusBarItem;
+  private taskSelectorItem!: vscode.StatusBarItem;
+  private playStopItem!: vscode.StatusBarItem;
+  private debugItem!: vscode.StatusBarItem;
   private disposables: vscode.Disposable[] = [];
 
   constructor(
     private readonly taskManager: TaskManager,
     private readonly debugManager?: DebugManager
   ) {
+    this.createStatusBarItems();
+    this.registerEventListeners();
+    this.update();
+  }
+
+  private createStatusBarItems(): void {
     const priority = this.getBasePriority();
 
     this.taskSelectorItem = vscode.window.createStatusBarItem(
@@ -41,11 +47,6 @@ export class StatusBarController implements vscode.Disposable {
       priority - 2
     );
     this.debugItem.name = 'Tasks Widget: Debug Task';
-
-    this.disposables.push(this.taskSelectorItem, this.playStopItem, this.debugItem);
-
-    this.registerEventListeners();
-    this.update();
   }
 
   /**
@@ -204,6 +205,12 @@ export class StatusBarController implements vscode.Disposable {
     // 5. Configuration changes (e.g., toggling showDebugButton or priority)
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration(`${CONFIG_SECTION}.${CONFIG_KEYS.STATUS_BAR_PRIORITY}`)) {
+          this.taskSelectorItem.dispose();
+          this.playStopItem.dispose();
+          this.debugItem.dispose();
+          this.createStatusBarItems();
+        }
         if (e.affectsConfiguration(CONFIG_SECTION)) {
           this.update();
         }
@@ -215,6 +222,9 @@ export class StatusBarController implements vscode.Disposable {
    * Disposes status bar items and registered event listeners.
    */
   public dispose(): void {
+    this.taskSelectorItem.dispose();
+    this.playStopItem.dispose();
+    this.debugItem.dispose();
     for (const disposable of this.disposables) {
       disposable.dispose();
     }

@@ -53,16 +53,21 @@ export function stripJsonComments(jsonString: string): string {
 }
 
 /**
- * Removes trailing commas before closing braces/brackets to safely parse relaxed JSON.
+ * Removes trailing commas before closing braces/brackets to safely parse relaxed JSON,
+ * while preserving string literal contents.
  */
 export function stripTrailingCommas(jsonString: string): string {
-  return jsonString.replace(/,(\s*[\]}])/g, '$1');
+  return jsonString.replace(
+    /(?:"(?:\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")|,(?=\s*[\]}])/g,
+    (match) => (match.startsWith('"') ? match : '')
+  );
 }
 
 /**
  * Parses tasks.json content, handling comments and defaults.
+ * If strict is true and parsing fails on non-empty content, throws an Error.
  */
-export function parseTasksJson(content: string): TasksJsonStructure {
+export function parseTasksJson(content: string, strict = false): TasksJsonStructure {
   const trimmed = content.trim();
   if (!trimmed) {
     return {
@@ -83,8 +88,10 @@ export function parseTasksJson(content: string): TasksJsonStructure {
       }
       return parsed as TasksJsonStructure;
     }
-  } catch {
-    // If parsing fails, return a safe fallback structure
+  } catch (err) {
+    if (strict) {
+      throw err;
+    }
   }
 
   return {
@@ -104,7 +111,7 @@ export function formatTasksJson(structure: TasksJsonStructure): string {
  * Inserts a new task definition into raw tasks.json content or updates an existing one with matching label.
  */
 export function insertOrUpdateTaskInJson(jsonContent: string, task: TaskConfigDefinition): string {
-  const parsed = parseTasksJson(jsonContent);
+  const parsed = parseTasksJson(jsonContent, true);
   if (!Array.isArray(parsed.tasks)) {
     parsed.tasks = [];
   }
@@ -244,8 +251,15 @@ export class TaskConfigManager {
   ): Promise<vscode.Uri | undefined> {
     const existing = await this.readTasksJson(folder);
     const rawContent = existing ? existing.content : '';
-    const updatedContent = insertOrUpdateTaskInJson(rawContent, task);
-    return this.writeTasksJson(updatedContent, folder);
+    try {
+      const updatedContent = insertOrUpdateTaskInJson(rawContent, task);
+      return this.writeTasksJson(updatedContent, folder);
+    } catch (err) {
+      vscode.window.showErrorMessage(
+        `Failed to parse tasks.json. File was not modified to prevent data loss: ${err instanceof Error ? err.message : String(err)}`
+      );
+      return undefined;
+    }
   }
 
   /**
@@ -271,7 +285,13 @@ export class TaskConfigManager {
       return undefined;
     }
 
-    const existing = await this.readTasksJson(folder);
+    let existing = await this.readTasksJson(folder);
+    if (!existing) {
+      const initialContent = formatTasksJson({ version: DEFAULTS.TASKS_VERSION, tasks: [] });
+      await this.writeTasksJson(initialContent, folder);
+      existing = await this.readTasksJson(folder);
+    }
+
     const line = existing ? findTaskLineInContent(existing.content, taskLabel) : -1;
 
     const doc = await vscode.workspace.openTextDocument(uri);

@@ -131,7 +131,9 @@ export class DebugManager implements vscode.Disposable {
     match = configs.find(
       (c) =>
         typeof c.name === 'string' &&
-        (c.name.toLowerCase().includes(normalizedLabel) || normalizedLabel.includes(c.name.toLowerCase()))
+        c.name.trim().length > 2 &&
+        (c.name.toLowerCase().includes(normalizedLabel) ||
+          (normalizedLabel.length > 2 && normalizedLabel.includes(c.name.toLowerCase())))
     );
     if (match) {
       return match;
@@ -156,7 +158,11 @@ export class DebugManager implements vscode.Disposable {
     }
 
     // Fallback: initiate debugging with the task label as configuration name directly
-    return vscode.debug.startDebugging(targetFolder, label);
+    const started = await vscode.debug.startDebugging(targetFolder, label);
+    if (!started) {
+      vscode.window.showWarningMessage(`No debug configuration found matching task "${label}".`);
+    }
+    return started;
   }
 
   /**

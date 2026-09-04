@@ -74,6 +74,15 @@ describe('JSON Utilities', () => {
     assert.deepStrictEqual(parsed, { items: [1, 2], obj: { a: 1 } });
   });
 
+  it('should preserve commas inside string literals when stripping trailing commas', () => {
+    const jsonWithStringComma = '{"cmd": "echo {a, }", "arg": "[1, ]", "items": ["foo", ], }';
+    const cleaned = stripTrailingCommas(jsonWithStringComma);
+    const parsed = JSON.parse(cleaned);
+    assert.strictEqual(parsed.cmd, 'echo {a, }');
+    assert.strictEqual(parsed.arg, '[1, ]');
+    assert.deepStrictEqual(parsed.items, ['foo']);
+  });
+
   it('should parse tasks.json with comments and trailing commas', () => {
     const jsonc = `
     {
@@ -293,6 +302,34 @@ describe('TaskConfigManager Workspace Operations', () => {
     const lastRevealed = mockEnv.getLastRevealedRange();
     assert.ok(lastRevealed !== undefined);
     assert.strictEqual(lastRevealed?.range.start.line, 4);
+  });
+
+  it('should not overwrite tasks.json and show error when existing content is invalid JSON', async () => {
+    const invalidJson = '{\n  "version": "2.0.0",\n  "tasks": [ INVALID JSON HERE ]\n}';
+    mockEnv.fsStorage[tasksFilePath] = Buffer.from(invalidJson, 'utf8');
+
+    const manager = new TaskConfigManager();
+    const newTask: TaskConfigDefinition = {
+      label: 'new-task',
+      type: 'shell',
+      command: 'echo 1',
+    };
+
+    const writtenUri = await manager.addTaskDefinition(newTask);
+    assert.strictEqual(writtenUri, undefined);
+    assert.strictEqual(
+      Buffer.from(mockEnv.fsStorage[tasksFilePath]).toString('utf8'),
+      invalidJson
+    );
+  });
+
+  it('should open tasks.json and initialize file if missing in openTaskInEditor', async () => {
+    delete mockEnv.fsStorage[tasksFilePath];
+
+    const manager = new TaskConfigManager();
+    const editor = await manager.openTaskInEditor('nonexistent');
+    assert.ok(editor !== undefined);
+    assert.ok(mockEnv.fsStorage[tasksFilePath] !== undefined);
   });
 
   it('should open tasks.json and initialize file if missing', async () => {
