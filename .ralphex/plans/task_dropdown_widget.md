@@ -5,32 +5,48 @@ Build a VS Code extension that mimics IntelliJ IDEA's Run Configuration widget i
 1. **Task Selector & Dropdown**:
    - Status bar item showing the active task (`$(checklist) <Task Name> ▾`).
    - Clicking opens a QuickPick menu listing all workspace tasks and auto-detected scripts.
-   - **IntelliJ-style QuickPick Actions**:
-     - QuickPick title buttons: `$(add)` (Add New Task) and `$(gear)` (Configure tasks.json).
-     - Per-item action button: `$(edit)` on each task item to jump directly to its definition in `.vscode/tasks.json`.
-     - Action entries in dropdown list: `$(add) Add New Task...` and `$(gear) Edit Tasks (tasks.json)...`.
+   - QuickPick title buttons: `$(add)` (Add New Task) and `$(gear)` (Configure tasks.json).
+   - Per-item action button: `$(edit)` on each task item to jump directly to its definition in `.vscode/tasks.json`.
+   - Dedicated list actions: `$(add) Add New Task...` and `$(gear) Edit Tasks (tasks.json)...`.
 2. **Add & Edit Task Management**:
    - **Add New Task**: Guided prompt flow (Task Name -> Command -> Shell/Process -> Build/Test group), automatically inserting the formatted task definition into `.vscode/tasks.json` and selecting it as active.
-   - **Edit Existing Task**: Opens `.vscode/tasks.json`, navigates cursor to the task definition line, and highlights it. For auto-detected tasks, provides "Customize in tasks.json" template generation.
+   - **Edit Existing Task**: Opens `.vscode/tasks.json`, navigates cursor to the task definition line, and highlights it.
 3. **Play / Dynamic Stop Button**:
-   - **When idle**: shows `$(play)` with tooltip to execute the selected task.
-   - **When running**: dynamically replaced with `$(debug-stop)` to terminate the running task process.
+   - When idle: shows `$(play)` with tooltip to execute the selected task.
+   - When running: dynamically replaced with `$(debug-stop)` to terminate the running task process.
 4. **Debug Button**:
    - `$(debug-alt)` button adjacent to Play to run matching `.vscode/launch.json` configuration or trigger debug session.
 5. **State Persistence**:
    - Selected task is saved in `context.workspaceState` across VS Code restarts.
 
----
-
 ## Implementation Steps
-- [ ] Initialize project configuration files (`package.json`, `tsconfig.json`, `.gitignore`, `.vscodeignore`) with TypeScript and VS Code extension dependencies.
-- [ ] Install dependencies (`npm install` for `@types/vscode`, `@types/node`, `typescript`).
-- [ ] Create `src/constants.ts` defining command IDs (`selectTask`, `runSelectedTask`, `stopSelectedTask`, `debugSelectedTask`, `addNewTask`, `editTask`, `configureTasks`), configuration keys, and workspace storage keys.
-- [ ] Create `src/taskConfigManager.ts` to manage `.vscode/tasks.json` reading and writing (generating template, adding new task definitions, finding line numbers for task definitions to reveal in editor, and customizing auto-detected tasks).
-- [ ] Create `src/taskManager.ts` to fetch tasks (`vscode.tasks.fetchTasks`), persist/restore selected task via `workspaceState`, track running `vscode.TaskExecution`, and handle termination.
-- [ ] Create `src/debugManager.ts` to match tasks with `.vscode/launch.json` configurations or initiate debugging via `vscode.debug.startDebugging`.
-- [ ] Create `src/statusBar.ts` to manage Status Bar UI items (Task Selector, Play/Stop toggle button, and Debug button), handling live updates when tasks start, finish, or are terminated.
-- [ ] Create `src/quickPickController.ts` to build the IntelliJ-style QuickPick dropdown with item `$(edit)` buttons, title bar `$(add)` button, and action entries (`Add New Task...`, `Edit Tasks...`).
-- [ ] Create `src/extension.ts` to register all commands, wire event listeners (`onDidStartTaskProcess`, `onDidEndTaskProcess`), and register disposables.
-- [ ] Compile TypeScript with `npm run compile` and verify zero compilation errors.
-- [ ] Create sample `.vscode/tasks.json` and `.vscode/launch.json` in the workspace to test task listing, running, stopping, debugging, adding, and editing.
+
+### Task 1: Extension Scaffolding and TypeScript Configuration
+- [x] Initialize `package.json` with extension manifest metadata, command contributions, configuration settings, and dependencies (`@types/vscode`, `@types/node`, `typescript`).
+- [x] Create `tsconfig.json` with target ES2022 and CommonJS module output.
+- [x] Create `.vscodeignore` to exclude development and test files from the extension bundle.
+- [x] Run `npm install` to install compiler and type definition dependencies.
+
+### Task 2: Core Constants and Task Configuration Manager
+- [ ] Create `src/constants.ts` with command IDs, configuration keys, and workspace storage keys.
+- [ ] Create `src/taskConfigManager.ts` to handle `.vscode/tasks.json` reading, writing, formatted insertion of new tasks, and line number resolution for task editing.
+
+### Task 3: Task Manager and Debug Manager Implementation
+- [ ] Create `src/taskManager.ts` to fetch tasks via `vscode.tasks.fetchTasks()`, track active `vscode.TaskExecution`, handle task process termination, and persist/restore active task selection using `workspaceState`.
+- [ ] Create `src/debugManager.ts` to resolve configurations in `.vscode/launch.json` matching the active task or initiate debugging via `vscode.debug.startDebugging()`.
+
+### Task 4: Status Bar Controller
+- [ ] Create `src/statusBar.ts` managing the three status bar items: Task Selector (`$(checklist)`), Play/Stop toggle (`$(play)` / `$(debug-stop)`), and Debug (`$(debug-alt)`).
+- [ ] Implement event listeners for task process lifecycle (`onDidStartTaskProcess`, `onDidEndTaskProcess`) to swap between Play and Stop dynamically.
+
+### Task 5: QuickPick Dropdown Controller with Add and Edit Actions
+- [ ] Create `src/quickPickController.ts` to render the QuickPick dropdown with grouped tasks, item-level `$(edit)` buttons to open `tasks.json` at the task line, title bar `$(add)` button, and `Add New Task` / `Edit Tasks` menu entries.
+- [ ] Implement the interactive Add New Task flow prompting for label, command, execution type, and group.
+
+### Task 6: Extension Entrypoint and Command Registration
+- [ ] Create `src/extension.ts` wiring all commands (`selectTask`, `runSelectedTask`, `stopSelectedTask`, `debugSelectedTask`, `addNewTask`, `editTask`, `configureTasks`) and registering disposables.
+- [ ] Compile TypeScript with `npm run compile` and fix any compiler or type errors.
+
+### Task 7: Workspace Verification and Sample Tasks
+- [ ] Create sample `.vscode/tasks.json` and `.vscode/launch.json` demonstrating build, test, and long-running watch tasks.
+- [ ] Verify that TypeScript compilation passes cleanly with zero warnings or errors.

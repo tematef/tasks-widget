@@ -1,0 +1,87 @@
+{
+  "name": "tasks-widget",
+  "displayName": "Task Dropdown & Runner Widget",
+  "description": "IntelliJ IDEA-style Run Configuration and Task Dropdown widget in the VS Code status bar",
+  "version": "0.0.1",
+  "publisher": "tasks-widget",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "tasksWidget.selectTask",
+        "title": "Select Task",
+        "category": "Tasks Widget"
+      },
+      {
+        "command": "tasksWidget.runSelectedTask",
+        "title": "Run Selected Task",
+        "category": "Tasks Widget",
+        "icon": "$(play)"
+      },
+      {
+        "command": "tasksWidget.stopSelectedTask",
+        "title": "Stop Selected Task",
+        "category": "Tasks Widget",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "tasksWidget.debugSelectedTask",
+        "title": "Debug Selected Task",
+        "category": "Tasks Widget",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "tasksWidget.addNewTask",
+        "title": "Add New Task",
+        "category": "Tasks Widget",
+        "icon": "$(add)"
+      },
+      {
+        "command": "tasksWidget.editTask",
+        "title": "Edit Task in tasks.json",
+        "category": "Tasks Widget",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "tasksWidget.configureTasks",
+        "title": "Configure tasks.json",
+        "category": "Tasks Widget",
+        "icon": "$(gear)"
+      }
+    ],
+    "configuration": {
+      "title": "Task Dropdown & Runner Widget",
+      "properties": {
+        "tasksWidget.showDebugButton": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the debug button next to the play button in the status bar."
+        },
+        "tasksWidget.statusBarPriority": {
+          "type": "number",
+          "default": 100,
+          "description": "Priority order of the task dropdown in the status bar."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}
