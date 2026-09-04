@@ -49,5 +49,5 @@ Build a VS Code extension that mimics IntelliJ IDEA's Run Configuration widget i
 - [x] Compile TypeScript with `npm run compile` and fix any compiler or type errors.
 
 ### Task 7: Workspace Verification and Sample Tasks
-- [ ] Create sample `.vscode/tasks.json` and `.vscode/launch.json` demonstrating build, test, and long-running watch tasks.
-- [ ] Verify that TypeScript compilation passes cleanly with zero warnings or errors.
+- [x] Create sample `.vscode/tasks.json` and `.vscode/launch.json` demonstrating build, test, and long-running watch tasks.
+- [x] Verify that TypeScript compilation passes cleanly with zero warnings or errors.
