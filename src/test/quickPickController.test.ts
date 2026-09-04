@@ -396,6 +396,29 @@ describe('QuickPickController', () => {
       const result = await controller.addNewTaskFlow();
       assert.strictEqual(result, undefined);
     });
+
+    it('should safely handle existing tasks in tasks.json that lack a label property', async () => {
+      const jsonWithoutLabels = JSON.stringify({
+        version: '2.0.0',
+        tasks: [
+          { type: 'shell', command: 'echo hello' },
+          { taskName: 'legacy-name', type: 'shell', command: 'echo legacy' },
+        ],
+      });
+      mockEnv.fsStorage[taskConfigManager.getTasksFileUri()!.fsPath] = Buffer.from(
+        jsonWithoutLabels,
+        'utf8'
+      );
+
+      const inputs = ['safe-task', 'echo ok'];
+      mockEnv.mockWindow.setInputBoxHandler(() => inputs.shift());
+      const picks = [{ label: 'shell' }, { label: 'none' }];
+      mockEnv.mockWindow.setQuickPickHandler(() => picks.shift());
+
+      const result = await controller.addNewTaskFlow();
+      assert.ok(result);
+      assert.strictEqual(result.label, 'safe-task');
+    });
   });
 
   describe('editTask and configureTasks', () => {

@@ -149,7 +149,14 @@ export class DebugManager implements vscode.Disposable {
     taskOrLabel: vscode.Task | string,
     folder?: vscode.WorkspaceFolder
   ): Promise<boolean> {
-    const targetFolder = folder ?? this.workspaceFolder ?? vscode.workspace.workspaceFolders?.[0];
+    const taskFolder =
+      typeof taskOrLabel === 'object' &&
+      taskOrLabel.scope &&
+      typeof taskOrLabel.scope === 'object' &&
+      'uri' in taskOrLabel.scope
+        ? (taskOrLabel.scope as vscode.WorkspaceFolder)
+        : undefined;
+    const targetFolder = folder ?? taskFolder ?? this.workspaceFolder ?? vscode.workspace.workspaceFolders?.[0];
     const label = typeof taskOrLabel === 'string' ? taskOrLabel : taskOrLabel.name;
     const matchingConfig = await this.findMatchingDebugConfiguration(label, targetFolder);
 

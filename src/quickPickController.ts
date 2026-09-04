@@ -189,7 +189,10 @@ export class QuickPickController implements vscode.Disposable {
         actionHandled = true;
         quickPick.hide();
         if (e.item?.task) {
-          await this.editTask(e.item.task.name);
+          const folder = typeof e.item.task.scope === 'object' && e.item.task.scope !== null && 'uri' in e.item.task.scope
+            ? (e.item.task.scope as vscode.WorkspaceFolder)
+            : undefined;
+          await this.editTask(e.item.task.name, folder);
         }
         finish(undefined);
       });
@@ -262,7 +265,7 @@ export class QuickPickController implements vscode.Disposable {
     const trimmedLabel = label.trim();
     const existing = await this.taskConfigManager.readTasksJson();
     const taskNameExists = existing?.parsed?.tasks?.some(
-      (t) => t.label.toLowerCase() === trimmedLabel.toLowerCase()
+      (t) => typeof t.label === 'string' && t.label.toLowerCase() === trimmedLabel.toLowerCase()
     );
     if (taskNameExists) {
       const choice = await vscode.window.showWarningMessage(
@@ -373,19 +376,19 @@ export class QuickPickController implements vscode.Disposable {
   /**
    * Opens .vscode/tasks.json in editor and jumps to the task line.
    */
-  public async editTask(taskLabel?: string): Promise<vscode.TextEditor | undefined> {
+  public async editTask(taskLabel?: string, folder?: vscode.WorkspaceFolder): Promise<vscode.TextEditor | undefined> {
     const targetLabel = taskLabel ?? this.taskManager.getActiveTaskLabel();
     if (targetLabel) {
-      return this.taskConfigManager.openTaskInEditor(targetLabel);
+      return this.taskConfigManager.openTaskInEditor(targetLabel, folder);
     }
-    return this.taskConfigManager.openTasksJson();
+    return this.taskConfigManager.openTasksJson(folder);
   }
 
   /**
    * Opens .vscode/tasks.json for configuration.
    */
-  public async configureTasks(): Promise<vscode.TextEditor | undefined> {
-    return this.taskConfigManager.openTasksJson();
+  public async configureTasks(folder?: vscode.WorkspaceFolder): Promise<vscode.TextEditor | undefined> {
+    return this.taskConfigManager.openTasksJson(folder);
   }
 
   /**

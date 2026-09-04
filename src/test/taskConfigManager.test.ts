@@ -179,6 +179,61 @@ describe('Task Insertion and Updates', () => {
     assert.strictEqual(parsed.tasks?.[0].command, 'make new');
     assert.strictEqual(parsed.tasks?.[1].label, 'test');
   });
+
+  it('should preserve comments when inserting or updating tasks', () => {
+    const initialWithComments = `// Top-level comment
+{
+  // Version comment
+  "version": "2.0.0",
+  "tasks": [
+    // Build task comment
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "npm run build"
+    }
+  ]
+}
+`;
+    const newTask: TaskConfigDefinition = {
+      label: 'test',
+      type: 'shell',
+      command: 'npm test',
+    };
+    const result = insertOrUpdateTaskInJson(initialWithComments, newTask);
+    assert.ok(result.includes('// Top-level comment'));
+    assert.ok(result.includes('// Version comment'));
+    assert.ok(result.includes('// Build task comment'));
+    assert.ok(result.includes('"label": "test"'));
+  });
+
+  it('should completely replace existing task definition rather than merging leftover properties', () => {
+    const initial = JSON.stringify({
+      version: '2.0.0',
+      tasks: [
+        {
+          label: 'build',
+          type: 'npm',
+          script: 'build',
+          group: 'build',
+        },
+      ],
+    });
+    const replacementTask: TaskConfigDefinition = {
+      label: 'build',
+      type: 'shell',
+      command: 'cargo build',
+    };
+    const result = insertOrUpdateTaskInJson(initial, replacementTask);
+    const parsed = parseTasksJson(result);
+    assert.strictEqual(parsed.tasks?.length, 1);
+    const task = parsed.tasks![0];
+    assert.strictEqual(task.label, 'build');
+    assert.strictEqual(task.type, 'shell');
+    assert.strictEqual(task.command, 'cargo build');
+    assert.strictEqual((task as any).script, undefined);
+    assert.strictEqual(task.group, undefined);
+  });
 });
 
 describe('Task Line and Position Resolution', () => {
@@ -340,5 +395,34 @@ describe('TaskConfigManager Workspace Operations', () => {
     const parsed = JSON.parse(Buffer.from(mockEnv.fsStorage[tasksFilePath]).toString('utf8'));
     assert.strictEqual(parsed.version, '2.0.0');
     assert.deepStrictEqual(parsed.tasks, []);
+  });
+
+  it('should abort and not overwrite tasks.json when readFile encounters an I/O error', async () => {
+    const originalJson = '{\n  "version": "2.0.0",\n  "tasks": []\n}';
+    mockEnv.fsStorage[tasksFilePath] = Buffer.from(originalJson, 'utf8');
+
+    const originalReadFile = mockEnv.mockFs.readFile;
+    mockEnv.mockFs.readFile = async () => {
+      const error = new Error('Permission denied');
+      (error as any).code = 'EACCES';
+      throw error;
+    };
+
+    try {
+      const manager = new TaskConfigManager();
+      const newTask: TaskConfigDefinition = {
+        label: 'new-task',
+        type: 'shell',
+        command: 'echo 1',
+      };
+      const result = await manager.addTaskDefinition(newTask);
+      assert.strictEqual(result, undefined);
+      assert.strictEqual(
+        Buffer.from(mockEnv.fsStorage[tasksFilePath]).toString('utf8'),
+        originalJson
+      );
+    } finally {
+      mockEnv.mockFs.readFile = originalReadFile;
+    }
   });
 });

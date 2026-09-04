@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { modify, applyEdits, parse as parseJsonc } from 'jsonc-parser';
 import { DEFAULTS } from './constants';
 
 export interface TaskConfigDefinition {
@@ -111,19 +112,39 @@ export function formatTasksJson(structure: TasksJsonStructure): string {
  * Inserts a new task definition into raw tasks.json content or updates an existing one with matching label.
  */
 export function insertOrUpdateTaskInJson(jsonContent: string, task: TaskConfigDefinition): string {
-  const parsed = parseTasksJson(jsonContent, true);
-  if (!Array.isArray(parsed.tasks)) {
-    parsed.tasks = [];
+  const trimmed = jsonContent.trim();
+  if (!trimmed) {
+    return formatTasksJson({
+      version: DEFAULTS.TASKS_VERSION,
+      tasks: [task],
+    });
   }
 
-  const existingIndex = parsed.tasks.findIndex((t) => t.label === task.label);
-  if (existingIndex >= 0) {
-    parsed.tasks[existingIndex] = { ...parsed.tasks[existingIndex], ...task };
-  } else {
-    parsed.tasks.push(task);
+  // Strictly validate that the existing content is valid JSON/JSONC
+  parseTasksJson(jsonContent, true);
+
+  const parsed = parseJsonc(jsonContent);
+  if (!parsed || typeof parsed !== 'object') {
+    return formatTasksJson({
+      version: DEFAULTS.TASKS_VERSION,
+      tasks: [task],
+    });
   }
 
-  return formatTasksJson(parsed);
+  const tasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+  const existingIndex = tasks.findIndex((t: any) => t && t.label === task.label);
+
+  const editPath = existingIndex >= 0 ? ['tasks', existingIndex] : Array.isArray(parsed.tasks) ? ['tasks', -1] : ['tasks'];
+  const editVal = Array.isArray(parsed.tasks) || existingIndex >= 0 ? task : [task];
+
+  const edits = modify(jsonContent, editPath, editVal, {
+    formattingOptions: {
+      insertSpaces: true,
+      tabSize: 2,
+    },
+  });
+
+  return applyEdits(jsonContent, edits);
 }
 
 /**
@@ -211,14 +232,24 @@ export class TaskConfigManager {
       return undefined;
     }
 
+    let fileData: Uint8Array;
     try {
-      const fileData = await vscode.workspace.fs.readFile(uri);
-      const content = Buffer.from(fileData).toString('utf8');
-      const parsed = parseTasksJson(content);
-      return { content, parsed };
-    } catch {
-      return undefined;
+      fileData = await vscode.workspace.fs.readFile(uri);
+    } catch (err: any) {
+      if (
+        err?.code === 'FileNotFound' ||
+        err?.code === 'ENOENT' ||
+        err?.name === 'EntryNotFound (FileSystemError)'
+      ) {
+        return undefined;
+      }
+      vscode.window.showErrorMessage(`Failed to read tasks.json: ${err instanceof Error ? err.message : String(err)}`);
+      throw err;
     }
+
+    const content = Buffer.from(fileData).toString('utf8');
+    const parsed = parseTasksJson(content);
+    return { content, parsed };
   }
 
   /**
@@ -249,7 +280,13 @@ export class TaskConfigManager {
     task: TaskConfigDefinition,
     folder?: vscode.WorkspaceFolder
   ): Promise<vscode.Uri | undefined> {
-    const existing = await this.readTasksJson(folder);
+    let existing: { content: string; parsed: TasksJsonStructure } | undefined;
+    try {
+      existing = await this.readTasksJson(folder);
+    } catch {
+      return undefined;
+    }
+
     const rawContent = existing ? existing.content : '';
     try {
       const updatedContent = insertOrUpdateTaskInJson(rawContent, task);
@@ -266,7 +303,12 @@ export class TaskConfigManager {
    * Resolves the 0-indexed line number of a task label in .vscode/tasks.json.
    */
   public async findTaskLine(taskLabel: string, folder?: vscode.WorkspaceFolder): Promise<number> {
-    const existing = await this.readTasksJson(folder);
+    let existing: { content: string; parsed: TasksJsonStructure } | undefined;
+    try {
+      existing = await this.readTasksJson(folder);
+    } catch {
+      return -1;
+    }
     if (!existing) {
       return -1;
     }
@@ -285,11 +327,21 @@ export class TaskConfigManager {
       return undefined;
     }
 
-    let existing = await this.readTasksJson(folder);
+    let existing: { content: string; parsed: TasksJsonStructure } | undefined;
+    try {
+      existing = await this.readTasksJson(folder);
+    } catch {
+      return undefined;
+    }
+
     if (!existing) {
       const initialContent = formatTasksJson({ version: DEFAULTS.TASKS_VERSION, tasks: [] });
       await this.writeTasksJson(initialContent, folder);
-      existing = await this.readTasksJson(folder);
+      try {
+        existing = await this.readTasksJson(folder);
+      } catch {
+        // Ignore
+      }
     }
 
     const line = existing ? findTaskLineInContent(existing.content, taskLabel) : -1;
@@ -320,7 +372,13 @@ export class TaskConfigManager {
       return undefined;
     }
 
-    const existing = await this.readTasksJson(folder);
+    let existing: { content: string; parsed: TasksJsonStructure } | undefined;
+    try {
+      existing = await this.readTasksJson(folder);
+    } catch {
+      return undefined;
+    }
+
     if (!existing) {
       const initialContent = formatTasksJson({ version: DEFAULTS.TASKS_VERSION, tasks: [] });
       await this.writeTasksJson(initialContent, folder);

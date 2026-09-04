@@ -215,4 +215,49 @@ describe('TaskManager', () => {
 
     manager.dispose();
   });
+
+  it('should report isRunning false immediately after stopTask even when taskExecution remains pending in vscode.tasks', async () => {
+    const manager = new TaskManager(mockState as unknown as vscode.Memento);
+    await manager.setActiveTask(task1 as unknown as vscode.Task);
+    const execution = await manager.executeTask(task1 as unknown as vscode.Task);
+
+    assert.strictEqual(manager.isSelectedTaskRunning(), true);
+
+    // Stop the task
+    const stopped = await manager.stopSelectedTask();
+    assert.strictEqual(stopped, true);
+
+    // Verify isRunning returns false immediately, even while execution is still present in vscode.tasks.taskExecutions
+    assert.strictEqual(manager.isRunning(task1 as unknown as vscode.Task), false);
+    assert.strictEqual(manager.isSelectedTaskRunning(), false);
+
+    // Now simulate the async event when the process finally exits
+    mockEnv.mockTasks.onDidEndTaskEmitter.fire({ execution: execution as any });
+    assert.strictEqual(manager.isRunning(task1 as unknown as vscode.Task), false);
+
+    manager.dispose();
+  });
+
+  it('should track multiple executions when tasks share the same name', async () => {
+    const manager = new TaskManager(mockState as unknown as vscode.Memento);
+    const taskA1 = new MockTask({ type: 'shell' }, { name: 'folder1' } as any, 'Shared Task', 'workspace');
+    const taskA2 = new MockTask({ type: 'shell' }, { name: 'folder2' } as any, 'Shared Task', 'workspace');
+
+    const exec1 = await manager.executeTask(taskA1 as unknown as vscode.Task);
+    const exec2 = await manager.executeTask(taskA2 as unknown as vscode.Task);
+
+    assert.strictEqual(manager.isRunning(taskA1 as unknown as vscode.Task), true);
+
+    // Stop first execution
+    await manager.stopTask(taskA1 as unknown as vscode.Task);
+
+    // Second execution should still be running
+    assert.strictEqual(manager.isRunning(taskA2 as unknown as vscode.Task), true);
+
+    // Stop second execution
+    await manager.stopTask(taskA2 as unknown as vscode.Task);
+    assert.strictEqual(manager.isRunning(taskA2 as unknown as vscode.Task), false);
+
+    manager.dispose();
+  });
 });
