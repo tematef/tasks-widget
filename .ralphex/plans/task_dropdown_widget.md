@@ -45,8 +45,8 @@ Build a VS Code extension that mimics IntelliJ IDEA's Run Configuration widget i
 - [x] Implement the interactive Add New Task flow prompting for label, command, execution type, and group.
 
 ### Task 6: Extension Entrypoint and Command Registration
-- [ ] Create `src/extension.ts` wiring all commands (`selectTask`, `runSelectedTask`, `stopSelectedTask`, `debugSelectedTask`, `addNewTask`, `editTask`, `configureTasks`) and registering disposables.
-- [ ] Compile TypeScript with `npm run compile` and fix any compiler or type errors.
+- [x] Create `src/extension.ts` wiring all commands (`selectTask`, `runSelectedTask`, `stopSelectedTask`, `debugSelectedTask`, `addNewTask`, `editTask`, `configureTasks`) and registering disposables.
+- [x] Compile TypeScript with `npm run compile` and fix any compiler or type errors.
 
 ### Task 7: Workspace Verification and Sample Tasks
 - [ ] Create sample `.vscode/tasks.json` and `.vscode/launch.json` demonstrating build, test, and long-running watch tasks.

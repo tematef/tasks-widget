@@ -494,6 +494,28 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
     },
   };
 
+  const registeredCommands = new Map<string, (...args: unknown[]) => unknown>();
+
+  const mockCommands = {
+    registeredCommands,
+    registerCommand(command: string, callback: (...args: unknown[]) => unknown, _thisArg?: unknown): MockDisposable {
+      registeredCommands.set(command, callback);
+      return new MockDisposable(() => {
+        registeredCommands.delete(command);
+      });
+    },
+    async executeCommand<T = unknown>(command: string, ...args: unknown[]): Promise<T | undefined> {
+      const handler = registeredCommands.get(command);
+      if (!handler) {
+        throw new Error(`Command not found: ${command}`);
+      }
+      return (await handler(...args)) as T;
+    },
+    async getCommands(_filterInternal?: boolean): Promise<string[]> {
+      return Array.from(registeredCommands.keys());
+    },
+  };
+
   const vscodeModule = {
     Uri: MockUri,
     Position: MockPosition,
@@ -513,6 +535,7 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
     window: mockWindow,
     tasks: mockTasks,
     debug: mockDebug,
+    commands: mockCommands,
   };
 
   return {
@@ -523,10 +546,26 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
     mockWindow,
     mockTasks,
     mockDebug,
+    mockCommands,
     openedDocuments,
     getLastRevealedRange: () => lastRevealedRange,
     onDidChangeConfigurationEmitter,
   };
+}
+
+export class MockExtensionContext {
+  public subscriptions: Array<{ dispose(): unknown }> = [];
+  public workspaceState = new MockMemento();
+  public globalState = new MockMemento();
+  public extensionUri = MockUri.file('/mock/extension');
+  public extensionPath = '/mock/extension';
+  public storageUri = MockUri.file('/mock/storage');
+  public globalStorageUri = MockUri.file('/mock/globalStorage');
+  public logUri = MockUri.file('/mock/log');
+
+  public asAbsolutePath(relativePath: string): string {
+    return path.join(this.extensionPath, relativePath);
+  }
 }
 
 let activeMock: ReturnType<typeof createMockVscode> | undefined;
