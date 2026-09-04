@@ -41,6 +41,8 @@ export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
 export const DEFAULTS = {
   STATUS_BAR_PRIORITY: 100,
   TASKS_FILE_NAME: 'tasks.json',
+  LAUNCH_FILE_NAME: 'launch.json',
   VSCODE_DIR_NAME: '.vscode',
   TASKS_VERSION: '2.0.0',
 } as const;
+

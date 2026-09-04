@@ -32,8 +32,9 @@ Build a VS Code extension that mimics IntelliJ IDEA's Run Configuration widget i
 - [x] Create `src/taskConfigManager.ts` to handle `.vscode/tasks.json` reading, writing, formatted insertion of new tasks, and line number resolution for task editing.
 
 ### Task 3: Task Manager and Debug Manager Implementation
-- [ ] Create `src/taskManager.ts` to fetch tasks via `vscode.tasks.fetchTasks()`, track active `vscode.TaskExecution`, handle task process termination, and persist/restore active task selection using `workspaceState`.
-- [ ] Create `src/debugManager.ts` to resolve configurations in `.vscode/launch.json` matching the active task or initiate debugging via `vscode.debug.startDebugging()`.
+- [x] Create `src/taskManager.ts` to fetch tasks via `vscode.tasks.fetchTasks()`, track active `vscode.TaskExecution`, handle task process termination, and persist/restore active task selection using `workspaceState`.
+- [x] Create `src/debugManager.ts` to resolve configurations in `.vscode/launch.json` matching the active task or initiate debugging via `vscode.debug.startDebugging()`.
+
 
 ### Task 4: Status Bar Controller
 - [ ] Create `src/statusBar.ts` managing the three status bar items: Task Selector (`$(checklist)`), Play/Stop toggle (`$(play)` / `$(debug-stop)`), and Debug (`$(debug-alt)`).
