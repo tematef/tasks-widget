@@ -28,8 +28,8 @@ Build a VS Code extension that mimics IntelliJ IDEA's Run Configuration widget i
 - [x] Run `npm install` to install compiler and type definition dependencies.
 
 ### Task 2: Core Constants and Task Configuration Manager
-- [ ] Create `src/constants.ts` with command IDs, configuration keys, and workspace storage keys.
-- [ ] Create `src/taskConfigManager.ts` to handle `.vscode/tasks.json` reading, writing, formatted insertion of new tasks, and line number resolution for task editing.
+- [x] Create `src/constants.ts` with command IDs, configuration keys, and workspace storage keys.
+- [x] Create `src/taskConfigManager.ts` to handle `.vscode/tasks.json` reading, writing, formatted insertion of new tasks, and line number resolution for task editing.
 
 ### Task 3: Task Manager and Debug Manager Implementation
 - [ ] Create `src/taskManager.ts` to fetch tasks via `vscode.tasks.fetchTasks()`, track active `vscode.TaskExecution`, handle task process termination, and persist/restore active task selection using `workspaceState`.
