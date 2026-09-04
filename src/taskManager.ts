@@ -144,7 +144,7 @@ export class TaskManager implements vscode.Disposable {
       return false;
     }
     if (a.scope !== undefined && b.scope !== undefined) {
-      if (typeof a.scope === 'object' && typeof b.scope === 'object') {
+      if (a.scope && typeof a.scope === 'object' && b.scope && typeof b.scope === 'object') {
         const folderA = a.scope as vscode.WorkspaceFolder;
         const folderB = b.scope as vscode.WorkspaceFolder;
         if (folderA.uri?.toString() !== folderB.uri?.toString()) {

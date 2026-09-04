@@ -59,11 +59,22 @@ export class QuickPickController implements vscode.Disposable {
       const description = statusParts.length > 0 ? statusParts.join(' • ') : undefined;
 
       let detail: string | undefined;
-      const execution = task.execution as { command?: string; commandLine?: string; process?: string } | undefined;
+      const execution = task.execution as
+        | { command?: string | { value?: string }; commandLine?: string; process?: string }
+        | undefined;
       if (execution?.commandLine) {
         detail = execution.commandLine;
       } else if (execution?.command) {
-        detail = execution.command;
+        if (typeof execution.command === 'string') {
+          detail = execution.command;
+        } else if (
+          typeof execution.command === 'object' &&
+          execution.command !== null &&
+          'value' in execution.command &&
+          typeof execution.command.value === 'string'
+        ) {
+          detail = execution.command.value;
+        }
       } else if (execution?.process) {
         detail = execution.process;
       } else if (typeof task.definition?.command === 'string') {

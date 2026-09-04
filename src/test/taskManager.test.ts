@@ -1,6 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import * as assert from 'node:assert';
-import { setupVscodeMock, MockTask, MockMemento } from './mockVscode';
+import { setupVscodeMock, MockTask, MockMemento, MockUri } from './mockVscode';
 
 const mockEnv = setupVscodeMock();
 
@@ -287,6 +287,25 @@ describe('TaskManager', () => {
     });
 
     assert.strictEqual(manager.isRunning(task as unknown as vscode.Task), false);
+    manager.dispose();
+  });
+
+  it('should safely handle tasks with null scope without throwing', async () => {
+    const manager = new TaskManager(mockState as unknown as vscode.Memento);
+    const nullScopeTaskA = new MockTask({ type: 'shell' }, null, 'Null Scope Task', 'custom');
+    const nullScopeTaskB = new MockTask({ type: 'shell' }, null, 'Null Scope Task', 'custom');
+    const folderScopeTask = new MockTask({ type: 'shell' }, { uri: MockUri.file('/path') }, 'Null Scope Task', 'custom');
+
+    assert.strictEqual(
+      (manager as any).matchesTask(nullScopeTaskA as unknown as vscode.Task, nullScopeTaskB as unknown as vscode.Task),
+      true
+    );
+
+    assert.strictEqual(
+      (manager as any).matchesTask(nullScopeTaskA as unknown as vscode.Task, folderScopeTask as unknown as vscode.Task),
+      false
+    );
+
     manager.dispose();
   });
 });

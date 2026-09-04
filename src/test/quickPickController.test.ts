@@ -146,6 +146,20 @@ describe('QuickPickController', () => {
       assert.ok(taskItem);
       assert.strictEqual(taskItem.detail, '/usr/local/bin/my-tool');
     });
+
+    it('should display string value in detail when command is a ShellQuotedString object', () => {
+      const task = new MockTask(
+        { type: 'shell' },
+        MockTaskScope.Workspace,
+        'quoted-task',
+        'workspace',
+        { command: { value: 'echo "hello"', quoting: 1 } } as any
+      );
+      const items = controller.buildQuickPickItems([task as any]);
+      const taskItem = items.find((i) => i.task?.name === 'quoted-task');
+      assert.ok(taskItem);
+      assert.strictEqual(taskItem.detail, 'echo "hello"');
+    });
   });
 
   describe('showTaskSelector', () => {

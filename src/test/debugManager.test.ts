@@ -193,4 +193,19 @@ describe('DebugManager', () => {
 
     manager.dispose();
   });
+
+  it('should not match debug configuration via substring when task name is 2 or fewer characters', async () => {
+    const launchJson = JSON.stringify({
+      version: '0.2.0',
+      configurations: [
+        { type: 'node', request: 'launch', name: 'Run Specific Test' },
+      ],
+    });
+    mockEnv.fsStorage[launchFilePath] = Buffer.from(launchJson, 'utf8');
+
+    const manager = new DebugManager();
+    const match = await manager.findMatchingDebugConfiguration('ci');
+    assert.strictEqual(match, undefined);
+    manager.dispose();
+  });
 });
