@@ -133,8 +133,7 @@ export class DebugManager implements vscode.Disposable {
         typeof c.name === 'string' &&
         c.name.trim().length > 2 &&
         normalizedLabel.length > 2 &&
-        (c.name.toLowerCase().includes(normalizedLabel) ||
-          normalizedLabel.includes(c.name.toLowerCase()))
+        c.name.toLowerCase().includes(normalizedLabel)
     );
     if (match) {
       return match;

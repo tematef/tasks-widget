@@ -133,7 +133,7 @@ export class TaskManager implements vscode.Disposable {
   /**
    * Helper to check if two tasks match by reference, or by name and scope.
    */
-  private matchesTask(a?: vscode.Task, b?: vscode.Task): boolean {
+  public matchesTask(a?: vscode.Task, b?: vscode.Task): boolean {
     if (!a || !b) {
       return false;
     }
@@ -141,6 +141,9 @@ export class TaskManager implements vscode.Disposable {
       return true;
     }
     if (a.name !== b.name) {
+      return false;
+    }
+    if (a.source && b.source && a.source !== b.source) {
       return false;
     }
     if (a.scope !== undefined && b.scope !== undefined) {

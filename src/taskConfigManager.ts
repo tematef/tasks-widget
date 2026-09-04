@@ -294,12 +294,21 @@ export class TaskConfigManager {
     }
 
     const rawContent = existing ? existing.content : '';
+    let updatedContent: string;
     try {
-      const updatedContent = insertOrUpdateTaskInJson(rawContent, task);
-      return this.writeTasksJson(updatedContent, folder);
+      updatedContent = insertOrUpdateTaskInJson(rawContent, task);
     } catch (err) {
       vscode.window.showErrorMessage(
         `Failed to parse tasks.json. File was not modified to prevent data loss: ${err instanceof Error ? err.message : String(err)}`
+      );
+      return undefined;
+    }
+
+    try {
+      return await this.writeTasksJson(updatedContent, folder);
+    } catch (err) {
+      vscode.window.showErrorMessage(
+        `Failed to write tasks.json: ${err instanceof Error ? err.message : String(err)}`
       );
       return undefined;
     }

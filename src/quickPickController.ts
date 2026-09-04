@@ -41,8 +41,9 @@ export class QuickPickController implements vscode.Disposable {
       }
     }
 
+    const activeTask = this.taskManager.getActiveTask();
     const mapTaskToItem = (task: vscode.Task): TaskQuickPickItem => {
-      const isActive = task.name === activeLabel;
+      const isActive = activeTask ? this.taskManager.matchesTask(task, activeTask) : task.name === activeLabel;
       const isRunning = this.taskManager.isTaskRunning(task);
 
       const statusParts: string[] = [];
@@ -172,6 +173,10 @@ export class QuickPickController implements vscode.Disposable {
     quickPick.buttons = [addButton, gearButton];
 
     const tasks = await this.taskManager.fetchTasks();
+    if (this.activeQuickPick !== quickPick) {
+      quickPick.dispose();
+      return undefined;
+    }
     quickPick.items = this.buildQuickPickItems(tasks);
 
     return new Promise<vscode.Task | undefined>((resolve) => {
@@ -255,7 +260,19 @@ export class QuickPickController implements vscode.Disposable {
    *
    * Inserts the formatted task definition and selects it as active.
    */
-  public async addNewTaskFlow(): Promise<TaskConfigDefinition | undefined> {
+  public async addNewTaskFlow(folder?: vscode.WorkspaceFolder): Promise<TaskConfigDefinition | undefined> {
+    let targetFolder = folder;
+    if (!targetFolder && vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 1) {
+      if (typeof vscode.window.showWorkspaceFolderPick === 'function') {
+        targetFolder = await vscode.window.showWorkspaceFolderPick({
+          placeHolder: 'Select workspace folder to create task in',
+        });
+        if (!targetFolder) {
+          return undefined;
+        }
+      }
+    }
+
     // Step 1: Prompt for task name
     const label = await vscode.window.showInputBox({
       title: 'Add New Task (1/4): Task Name',
@@ -276,7 +293,7 @@ export class QuickPickController implements vscode.Disposable {
     const trimmedLabel = label.trim();
     let existing;
     try {
-      existing = await this.taskConfigManager.readTasksJson();
+      existing = await this.taskConfigManager.readTasksJson(targetFolder);
     } catch {
       // Proceed with undefined existing config; addTaskDefinition handles I/O errors
     }
@@ -393,11 +410,17 @@ export class QuickPickController implements vscode.Disposable {
    * Opens .vscode/tasks.json in editor and jumps to the task line.
    */
   public async editTask(taskLabel?: string, folder?: vscode.WorkspaceFolder): Promise<vscode.TextEditor | undefined> {
+    const activeTask = this.taskManager.getActiveTask();
+    const taskFolder =
+      activeTask && typeof activeTask.scope === 'object' && activeTask.scope && 'uri' in activeTask.scope
+        ? (activeTask.scope as vscode.WorkspaceFolder)
+        : undefined;
+    const targetFolder = folder ?? taskFolder;
     const targetLabel = taskLabel ?? this.taskManager.getActiveTaskLabel();
     if (targetLabel) {
-      return this.taskConfigManager.openTaskInEditor(targetLabel, folder);
+      return this.taskConfigManager.openTaskInEditor(targetLabel, targetFolder);
     }
-    return this.taskConfigManager.openTasksJson(folder);
+    return this.taskConfigManager.openTasksJson(targetFolder);
   }
 
   /**
