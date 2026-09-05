@@ -87,11 +87,16 @@ describe('Extension Entrypoint (extension.ts)', () => {
     assert.ok(registered.includes(COMMANDS.ADD_NEW_TASK));
     assert.ok(registered.includes(COMMANDS.EDIT_TASK));
     assert.ok(registered.includes(COMMANDS.CONFIGURE_TASKS));
+    assert.ok(registered.includes(COMMANDS.REFRESH_TASKS));
+    assert.ok(registered.includes(COMMANDS.SELECT_TREE_TASK));
+    assert.ok(registered.includes(COMMANDS.RUN_TREE_TASK));
+    assert.ok(registered.includes(COMMANDS.DEBUG_TREE_TASK));
+    assert.ok(registered.includes(COMMANDS.EDIT_TREE_TASK));
   });
 
-  it('should push all controllers, managers, and commands into context.subscriptions', () => {
-    // 4 managers/controllers + 7 commands = 11 disposables
-    assert.strictEqual(context.subscriptions.length, 11);
+  it('should push all controllers, managers, tree view, and commands into context.subscriptions', () => {
+    // 4 managers/controllers + 1 tree provider + 1 tree view + 12 commands = 18 disposables
+    assert.strictEqual(context.subscriptions.length, 18);
   });
 
   it('should execute selectTask command and open QuickPick', async () => {

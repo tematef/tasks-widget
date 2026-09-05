@@ -57,8 +57,100 @@
         "title": "Configure tasks.json",
         "category": "Tasks Widget",
         "icon": "$(gear)"
+      },
+      {
+        "command": "tasksWidget.refreshTasks",
+        "title": "Refresh Tasks",
+        "category": "Tasks Widget",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "tasksWidget.runTreeTask",
+        "title": "Run Task",
+        "category": "Tasks Widget",
+        "icon": "$(play)"
+      },
+      {
+        "command": "tasksWidget.debugTreeTask",
+        "title": "Debug Task",
+        "category": "Tasks Widget",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "tasksWidget.editTreeTask",
+        "title": "Edit Task in tasks.json",
+        "category": "Tasks Widget",
+        "icon": "$(edit)"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "tasks-widget-view-container",
+          "title": "Tasks Runner",
+          "icon": "resources/tasks-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "tasks-widget-view-container": [
+        {
+          "id": "tasksWidget.sidebarView",
+          "name": "Tasks Runner"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "tasksWidget.runSelectedTask",
+          "when": "view == tasksWidget.sidebarView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "tasksWidget.debugSelectedTask",
+          "when": "view == tasksWidget.sidebarView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "tasksWidget.stopSelectedTask",
+          "when": "view == tasksWidget.sidebarView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "tasksWidget.addNewTask",
+          "when": "view == tasksWidget.sidebarView",
+          "group": "navigation@4"
+        },
+        {
+          "command": "tasksWidget.refreshTasks",
+          "when": "view == tasksWidget.sidebarView",
+          "group": "navigation@5"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "tasksWidget.runTreeTask",
+          "when": "view == tasksWidget.sidebarView && viewItem == idleTaskItem",
+          "group": "inline@1"
+        },
+        {
+          "command": "tasksWidget.stopSelectedTask",
+          "when": "view == tasksWidget.sidebarView && viewItem == runningTaskItem",
+          "group": "inline@1"
+        },
+        {
+          "command": "tasksWidget.debugTreeTask",
+          "when": "view == tasksWidget.sidebarView",
+          "group": "inline@2"
+        },
+        {
+          "command": "tasksWidget.editTreeTask",
+          "when": "view == tasksWidget.sidebarView",
+          "group": "inline@3"
+        }
+      ]
+    },
     "configuration": {
       "title": "Task Dropdown & Runner Widget",
       "properties": {

@@ -5,6 +5,7 @@ import { QuickPickController } from './quickPickController';
 import { StatusBarController } from './statusBar';
 import { TaskConfigManager } from './taskConfigManager';
 import { TaskManager } from './taskManager';
+import { TasksTreeDataProvider } from './tasksTreeDataProvider';
 
 export interface TasksWidgetExtensionApi {
   taskManager: TaskManager;
@@ -104,19 +105,73 @@ export async function activate(
     }
   );
 
+  // 8. Tree Data Provider & Tree Commands
+  const tasksTreeDataProvider = new TasksTreeDataProvider(taskManager, taskConfigManager, debugManager);
+  const treeView = vscode.window.registerTreeDataProvider('tasksWidget.sidebarView', tasksTreeDataProvider);
+
+  const refreshTasksCommand = vscode.commands.registerCommand(
+    COMMANDS.REFRESH_TASKS,
+    () => {
+      tasksTreeDataProvider.refresh();
+    }
+  );
+
+  const selectTreeTaskCommand = vscode.commands.registerCommand(
+    COMMANDS.SELECT_TREE_TASK,
+    async (task: vscode.Task) => {
+      if (task) {
+        await taskManager.setActiveTask(task);
+      }
+    }
+  );
+
+  const runTreeTaskCommand = vscode.commands.registerCommand(
+    COMMANDS.RUN_TREE_TASK,
+    async (item: { task?: vscode.Task }) => {
+      if (item?.task) {
+        return taskManager.executeTask(item.task);
+      }
+    }
+  );
+
+  const debugTreeTaskCommand = vscode.commands.registerCommand(
+    COMMANDS.DEBUG_TREE_TASK,
+    async (item: { task?: vscode.Task }) => {
+      if (item?.task) {
+        return debugManager.debugTask(item.task);
+      }
+    }
+  );
+
+  const editTreeTaskCommand = vscode.commands.registerCommand(
+    COMMANDS.EDIT_TREE_TASK,
+    async (item: { task?: vscode.Task }) => {
+      if (item?.task) {
+        return quickPickController.editTask(item.task.name);
+      }
+    }
+  );
+
   // Register all disposables in extension context subscriptions
   context.subscriptions.push(
     taskManager,
     debugManager,
     statusBarController,
     quickPickController,
+    tasksTreeDataProvider,
+    treeView,
     selectTaskCommand,
     runSelectedTaskCommand,
     stopSelectedTaskCommand,
     debugSelectedTaskCommand,
     addNewTaskCommand,
     editTaskCommand,
-    configureTasksCommand
+    configureTasksCommand,
+    refreshTasksCommand,
+    selectTreeTaskCommand,
+    runTreeTaskCommand,
+    debugTreeTaskCommand,
+    editTreeTaskCommand
   );
 
   return {

@@ -9,6 +9,11 @@ export const COMMANDS = {
   ADD_NEW_TASK: 'tasksWidget.addNewTask',
   EDIT_TASK: 'tasksWidget.editTask',
   CONFIGURE_TASKS: 'tasksWidget.configureTasks',
+  REFRESH_TASKS: 'tasksWidget.refreshTasks',
+  SELECT_TREE_TASK: 'tasksWidget.selectTreeTask',
+  RUN_TREE_TASK: 'tasksWidget.runTreeTask',
+  DEBUG_TREE_TASK: 'tasksWidget.debugTreeTask',
+  EDIT_TREE_TASK: 'tasksWidget.editTreeTask',
 } as const;
 
 export type CommandId = typeof COMMANDS[keyof typeof COMMANDS];

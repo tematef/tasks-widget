@@ -167,6 +167,25 @@ export class MockThemeIcon {
   constructor(public readonly id: string, public readonly color?: unknown) {}
 }
 
+export enum MockTreeItemCollapsibleState {
+  None = 0,
+  Collapsed = 1,
+  Expanded = 2,
+}
+
+export class MockTreeItem {
+  public description?: string;
+  public tooltip?: string;
+  public iconPath?: unknown;
+  public contextValue?: string;
+  public command?: { command: string; title: string; arguments?: unknown[] };
+
+  constructor(
+    public label: string,
+    public collapsibleState: MockTreeItemCollapsibleState = MockTreeItemCollapsibleState.None
+  ) {}
+}
+
 export enum MockQuickPickItemKind {
   Separator = -1,
   Default = 0,
@@ -427,6 +446,9 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
       };
       return editor;
     },
+    registerTreeDataProvider(_viewId: string, _treeDataProvider: unknown) {
+      return new MockDisposable();
+    },
   };
 
   const tasksList: MockTask[] = [];
@@ -550,6 +572,8 @@ export function createMockVscode(inMemoryFiles: InMemoryFileSystem = {}) {
     StatusBarAlignment: MockStatusBarAlignment,
     StatusBarItem: MockStatusBarItem,
     ThemeIcon: MockThemeIcon,
+    TreeItem: MockTreeItem,
+    TreeItemCollapsibleState: MockTreeItemCollapsibleState,
     QuickPickItemKind: MockQuickPickItemKind,
     workspace: mockWorkspace,
     window: mockWindow,
