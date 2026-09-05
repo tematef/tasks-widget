@@ -22,7 +22,7 @@ describe('TasksTreeDataProvider', () => {
     taskManager = new TaskManager(new MockMemento() as unknown as vscode.Memento);
     taskConfigManager = new TaskConfigManager();
     debugManager = new DebugManager();
-    provider = new TasksTreeDataProvider(taskManager, taskConfigManager, debugManager);
+    provider = new TasksTreeDataProvider(taskManager);
   });
 
   it('should return three root categories: Selected Task, Workspace Tasks, and Detected Tasks', async () => {
@@ -78,7 +78,12 @@ describe('TasksTreeDataProvider', () => {
 
   it('should return workspace tasks under Workspace Tasks category', async () => {
     const workspaceTask = new MockTask({ type: 'shell' }, MockTaskScope.Workspace, 'compile', 'workspace');
-    const detectedTask = new MockTask({ type: 'npm' }, MockTaskScope.Folder, 'test', 'npm');
+    const detectedTask = new MockTask(
+      { type: 'npm' },
+      { uri: MockUri.file('/path'), name: 'test', index: 0 },
+      'test',
+      'npm'
+    );
     mockEnv.mockTasks.setTasks([workspaceTask, detectedTask]);
 
     const roots = await provider.getChildren();
@@ -93,7 +98,12 @@ describe('TasksTreeDataProvider', () => {
 
   it('should return detected tasks under Detected Tasks category', async () => {
     const workspaceTask = new MockTask({ type: 'shell' }, MockTaskScope.Workspace, 'compile', 'workspace');
-    const detectedTask = new MockTask({ type: 'npm' }, MockTaskScope.Folder, 'test', 'npm');
+    const detectedTask = new MockTask(
+      { type: 'npm' },
+      { uri: MockUri.file('/path'), name: 'test', index: 0 },
+      'test',
+      'npm'
+    );
     mockEnv.mockTasks.setTasks([workspaceTask, detectedTask]);
 
     const roots = await provider.getChildren();

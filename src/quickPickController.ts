@@ -172,7 +172,17 @@ export class QuickPickController implements vscode.Disposable {
 
     quickPick.buttons = [addButton, gearButton];
 
-    const tasks = await this.taskManager.fetchTasks();
+    let tasks: vscode.Task[];
+    try {
+      tasks = await this.taskManager.fetchTasks();
+    } catch (err) {
+      quickPick.dispose();
+      vscode.window.showErrorMessage(
+        `Failed to discover tasks: ${err instanceof Error ? err.message : String(err)}`
+      );
+      return undefined;
+    }
+
     if (this.activeQuickPick !== quickPick) {
       quickPick.dispose();
       return undefined;
@@ -391,7 +401,7 @@ export class QuickPickController implements vscode.Disposable {
     }
 
     // Insert task into .vscode/tasks.json
-    const writeResult = await this.taskConfigManager.addTaskDefinition(taskDefinition);
+    const writeResult = await this.taskConfigManager.addTaskDefinition(taskDefinition, targetFolder);
     if (!writeResult) {
       return undefined;
     }

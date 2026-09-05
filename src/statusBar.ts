@@ -202,22 +202,6 @@ export class StatusBarController implements vscode.Disposable {
       })
     );
 
-    // 3. Process lifecycle events from vscode.tasks to dynamically toggle Play / Stop
-    this.disposables.push(
-      vscode.tasks.onDidStartTaskProcess(() => {
-        this.updatePlayStop();
-      }),
-      vscode.tasks.onDidEndTaskProcess(() => {
-        this.updatePlayStop();
-      }),
-      vscode.tasks.onDidStartTask(() => {
-        this.updatePlayStop();
-      }),
-      vscode.tasks.onDidEndTask(() => {
-        this.updatePlayStop();
-      })
-    );
-
     // 4. Debug session lifecycle events if DebugManager is provided
     if (this.debugManager) {
       this.disposables.push(

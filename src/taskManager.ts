@@ -143,7 +143,7 @@ export class TaskManager implements vscode.Disposable {
     if (a.name !== b.name) {
       return false;
     }
-    if (a.source && b.source && a.source !== b.source) {
+    if (a.source && b.source && a.source.toLowerCase() !== b.source.toLowerCase()) {
       return false;
     }
     if (a.scope !== undefined && b.scope !== undefined) {

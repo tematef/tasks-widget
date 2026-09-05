@@ -58,10 +58,13 @@ export async function activate(
     }
   );
 
-  // 3. Stop Selected Task (terminates active running task process)
+  // 3. Stop Selected Task (terminates active running task process or clicked tree task)
   const stopSelectedTaskCommand = vscode.commands.registerCommand(
     COMMANDS.STOP_SELECTED_TASK,
-    async () => {
+    async (item?: { task?: vscode.Task }) => {
+      if (item?.task) {
+        return taskManager.stopTask(item.task);
+      }
       return taskManager.stopSelectedTask();
     }
   );
@@ -106,7 +109,7 @@ export async function activate(
   );
 
   // 8. Tree Data Provider & Tree Commands
-  const tasksTreeDataProvider = new TasksTreeDataProvider(taskManager, taskConfigManager, debugManager);
+  const tasksTreeDataProvider = new TasksTreeDataProvider(taskManager);
   const sidebarTreeView = vscode.window.registerTreeDataProvider('tasksWidget.sidebarView', tasksTreeDataProvider);
 
   const refreshTasksCommand = vscode.commands.registerCommand(
@@ -147,7 +150,11 @@ export async function activate(
     COMMANDS.EDIT_TREE_TASK,
     async (item: { task?: vscode.Task }) => {
       if (item?.task) {
-        return quickPickController.editTask(item.task.name);
+        const folder =
+          item.task.scope && typeof item.task.scope === 'object' && 'uri' in item.task.scope
+            ? (item.task.scope as vscode.WorkspaceFolder)
+            : undefined;
+        return quickPickController.editTask(item.task.name, folder);
       }
     }
   );

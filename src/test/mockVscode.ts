@@ -130,9 +130,8 @@ export class MockEventEmitter<T = unknown> {
 }
 
 export enum MockTaskScope {
-  Folder = 1,
+  Global = 1,
   Workspace = 2,
-  Global = 3,
 }
 
 export class MockTask {

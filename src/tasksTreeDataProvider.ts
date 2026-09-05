@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 import { TaskManager } from './taskManager';
-import { TaskConfigManager } from './taskConfigManager';
-import { DebugManager } from './debugManager';
 
 export type TaskTreeItemType = 'category' | 'activeTask' | 'task' | 'empty';
 
@@ -23,22 +21,14 @@ export class TasksTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIt
 
   private disposables: vscode.Disposable[] = [];
 
-  constructor(
-    private readonly taskManager: TaskManager,
-    private readonly taskConfigManager: TaskConfigManager,
-    private readonly debugManager: DebugManager
-  ) {
+  constructor(private readonly taskManager: TaskManager) {
     this.registerListeners();
   }
 
   private registerListeners(): void {
     this.disposables.push(
       this.taskManager.onDidChangeActiveTask(() => this.refresh()),
-      this.taskManager.onDidChangeRunningState(() => this.refresh()),
-      vscode.tasks.onDidStartTask(() => this.refresh()),
-      vscode.tasks.onDidEndTask(() => this.refresh()),
-      vscode.tasks.onDidStartTaskProcess(() => this.refresh()),
-      vscode.tasks.onDidEndTaskProcess(() => this.refresh())
+      this.taskManager.onDidChangeRunningState(() => this.refresh())
     );
   }
 
@@ -105,7 +95,8 @@ export class TasksTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIt
   private async getCategoryChildren(element: TaskTreeItem): Promise<TaskTreeItem[]> {
     if (element.categoryKey === 'active') {
       const activeTask = this.taskManager.getActiveTask();
-      if (!activeTask) {
+      const activeTaskLabel = this.taskManager.getActiveTaskLabel();
+      if (!activeTask && !activeTaskLabel) {
         const emptyItem = new TaskTreeItem(
           'No task selected',
           vscode.TreeItemCollapsibleState.None,
@@ -116,16 +107,19 @@ export class TasksTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIt
         return [emptyItem];
       }
 
-      const isRunning = this.taskManager.isTaskRunning(activeTask);
+      const isRunning = activeTask
+        ? this.taskManager.isTaskRunning(activeTask)
+        : this.taskManager.isSelectedTaskRunning();
+      const label = activeTask ? activeTask.name : activeTaskLabel!;
       const activeNode = new TaskTreeItem(
-        activeTask.name,
+        label,
         vscode.TreeItemCollapsibleState.None,
         'activeTask',
         activeTask
       );
       activeNode.contextValue = isRunning ? 'runningTaskItem' : 'idleTaskItem';
       activeNode.description = isRunning ? '(running)' : '(selected)';
-      activeNode.tooltip = `Active Task: ${activeTask.name}${isRunning ? ' (Running)' : ''}`;
+      activeNode.tooltip = `Active Task: ${label}${isRunning ? ' (Running)' : ''}`;
       activeNode.iconPath = isRunning
         ? new vscode.ThemeIcon('sync~spin')
         : new vscode.ThemeIcon('pass-filled');
@@ -138,7 +132,7 @@ export class TasksTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIt
     if (element.categoryKey === 'workspace') {
       const workspaceTasks = allTasks.filter((t) => {
         const src = (t.source || '').toLowerCase();
-        return src === 'workspace' || t.scope === vscode.TaskScope.Workspace || typeof t.scope === 'object';
+        return !t.source || src === 'workspace';
       });
 
       if (workspaceTasks.length === 0) {
@@ -158,7 +152,7 @@ export class TasksTreeDataProvider implements vscode.TreeDataProvider<TaskTreeIt
     if (element.categoryKey === 'detected') {
       const detectedTasks = allTasks.filter((t) => {
         const src = (t.source || '').toLowerCase();
-        return src !== 'workspace' && t.scope !== vscode.TaskScope.Workspace && typeof t.scope !== 'object';
+        return Boolean(t.source && src !== 'workspace');
       });
 
       if (detectedTasks.length === 0) {
