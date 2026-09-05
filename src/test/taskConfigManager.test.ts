@@ -30,9 +30,11 @@ describe('Task Dropdown Constants', () => {
   });
 
   it('should define correct configuration keys', () => {
-    assert.strictEqual(CONFIG_SECTION, 'tasksWidget');
+    assert.strictEqual(CONFIG_SECTION, 'taskRunner');
     assert.strictEqual(CONFIG_KEYS.SHOW_DEBUG_BUTTON, 'showDebugButton');
     assert.strictEqual(CONFIG_KEYS.STATUS_BAR_PRIORITY, 'statusBarPriority');
+    assert.strictEqual(CONFIG_KEYS.SHOW_STATUS_BAR_WIDGET, 'showStatusBarWidget');
+    assert.strictEqual(CONFIG_KEYS.SHOW_ACTIVITY_BAR_VIEW, 'showActivityBarView');
   });
 
   it('should define correct workspace storage keys', () => {

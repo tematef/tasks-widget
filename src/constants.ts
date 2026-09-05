@@ -21,14 +21,13 @@ export type CommandId = typeof COMMANDS[keyof typeof COMMANDS];
 /**
  * Configuration section and keys defined in package.json.
  */
-export const CONFIG_SECTION = 'tasksWidget';
+export const CONFIG_SECTION = 'taskRunner';
 
 export const CONFIG_KEYS = {
   SHOW_DEBUG_BUTTON: 'showDebugButton',
   STATUS_BAR_PRIORITY: 'statusBarPriority',
   SHOW_STATUS_BAR_WIDGET: 'showStatusBarWidget',
   SHOW_ACTIVITY_BAR_VIEW: 'showActivityBarView',
-  SHOW_EXPLORER_VIEW: 'showExplorerView',
 } as const;
 
 export type ConfigKey = typeof CONFIG_KEYS[keyof typeof CONFIG_KEYS];
@@ -51,7 +50,6 @@ export const DEFAULTS = {
   SHOW_DEBUG_BUTTON: true,
   SHOW_STATUS_BAR_WIDGET: true,
   SHOW_ACTIVITY_BAR_VIEW: true,
-  SHOW_EXPLORER_VIEW: true,
   TASKS_FILE_NAME: 'tasks.json',
   LAUNCH_FILE_NAME: 'launch.json',
   VSCODE_DIR_NAME: '.vscode',

@@ -108,7 +108,6 @@ export async function activate(
   // 8. Tree Data Provider & Tree Commands
   const tasksTreeDataProvider = new TasksTreeDataProvider(taskManager, taskConfigManager, debugManager);
   const sidebarTreeView = vscode.window.registerTreeDataProvider('tasksWidget.sidebarView', tasksTreeDataProvider);
-  const explorerTreeView = vscode.window.registerTreeDataProvider('tasksWidget.explorerView', tasksTreeDataProvider);
 
   const refreshTasksCommand = vscode.commands.registerCommand(
     COMMANDS.REFRESH_TASKS,
@@ -161,7 +160,6 @@ export async function activate(
     quickPickController,
     tasksTreeDataProvider,
     sidebarTreeView,
-    explorerTreeView,
     selectTaskCommand,
     runSelectedTaskCommand,
     stopSelectedTaskCommand,

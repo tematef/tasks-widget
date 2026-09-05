@@ -97,14 +97,7 @@
         {
           "id": "tasksWidget.sidebarView",
           "name": "Tasks Runner",
-          "when": "config.tasksWidget.showActivityBarView"
-        }
-      ],
-      "explorer": [
-        {
-          "id": "tasksWidget.explorerView",
-          "name": "Tasks Runner",
-          "when": "config.tasksWidget.showExplorerView"
+          "when": "config.taskRunner.showActivityBarView"
         }
       ]
     },
@@ -112,77 +105,72 @@
       "view/title": [
         {
           "command": "tasksWidget.runSelectedTask",
-          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
+          "when": "view == tasksWidget.sidebarView",
           "group": "navigation@1"
         },
         {
           "command": "tasksWidget.debugSelectedTask",
-          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
+          "when": "view == tasksWidget.sidebarView",
           "group": "navigation@2"
         },
         {
           "command": "tasksWidget.stopSelectedTask",
-          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
+          "when": "view == tasksWidget.sidebarView",
           "group": "navigation@3"
         },
         {
           "command": "tasksWidget.addNewTask",
-          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
+          "when": "view == tasksWidget.sidebarView",
           "group": "navigation@4"
         },
         {
           "command": "tasksWidget.refreshTasks",
-          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
+          "when": "view == tasksWidget.sidebarView",
           "group": "navigation@5"
         }
       ],
       "view/item/context": [
         {
           "command": "tasksWidget.runTreeTask",
-          "when": "(view == tasksWidget.sidebarView || view == tasksWidget.explorerView) && viewItem == idleTaskItem",
+          "when": "view == tasksWidget.sidebarView && viewItem == idleTaskItem",
           "group": "inline@1"
         },
         {
           "command": "tasksWidget.stopSelectedTask",
-          "when": "(view == tasksWidget.sidebarView || view == tasksWidget.explorerView) && viewItem == runningTaskItem",
+          "when": "view == tasksWidget.sidebarView && viewItem == runningTaskItem",
           "group": "inline@1"
         },
         {
           "command": "tasksWidget.debugTreeTask",
-          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
+          "when": "view == tasksWidget.sidebarView",
           "group": "inline@2"
         },
         {
           "command": "tasksWidget.editTreeTask",
-          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
+          "when": "view == tasksWidget.sidebarView",
           "group": "inline@3"
         }
       ]
     },
     "configuration": {
-      "title": "Task Dropdown & Runner Widget",
+      "title": "Task Runner",
       "properties": {
-        "tasksWidget.showStatusBarWidget": {
+        "taskRunner.showStatusBarWidget": {
           "type": "boolean",
           "default": true,
           "description": "Show the task dropdown selector and run/stop/debug controls in the status bar."
         },
-        "tasksWidget.showActivityBarView": {
+        "taskRunner.showActivityBarView": {
           "type": "boolean",
           "default": true,
           "description": "Show the dedicated Tasks Runner icon and view in the Activity Bar."
         },
-        "tasksWidget.showExplorerView": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show the collapsible Tasks Runner view in the Explorer sidebar."
-        },
-        "tasksWidget.showDebugButton": {
+        "taskRunner.showDebugButton": {
           "type": "boolean",
           "default": true,
           "description": "Show the debug button next to the play button in the status bar."
         },
-        "tasksWidget.statusBarPriority": {
+        "taskRunner.statusBarPriority": {
           "type": "number",
           "default": 100,
           "description": "Priority order of the task dropdown in the status bar."
