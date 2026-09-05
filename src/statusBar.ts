@@ -58,6 +58,14 @@ export class StatusBarController implements vscode.Disposable {
   }
 
   /**
+   * Checks whether the status bar widget is enabled in workspace configuration.
+   */
+  private isStatusBarWidgetEnabled(): boolean {
+    const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    return config.get<boolean>(CONFIG_KEYS.SHOW_STATUS_BAR_WIDGET, DEFAULTS.SHOW_STATUS_BAR_WIDGET);
+  }
+
+  /**
    * Checks whether the debug button is enabled in workspace configuration.
    */
   private isDebugButtonEnabled(): boolean {
@@ -90,6 +98,13 @@ export class StatusBarController implements vscode.Disposable {
    * Refreshes all status bar items based on active task and execution states.
    */
   public update(): void {
+    if (!this.isStatusBarWidgetEnabled()) {
+      this.taskSelectorItem.hide();
+      this.playStopItem.hide();
+      this.debugItem.hide();
+      return;
+    }
+
     this.updateTaskSelector();
     this.updatePlayStop();
     this.updateDebug();
@@ -99,6 +114,11 @@ export class StatusBarController implements vscode.Disposable {
    * Updates the Task Selector status bar item with the active task name or fallback.
    */
   private updateTaskSelector(): void {
+    if (!this.isStatusBarWidgetEnabled()) {
+      this.taskSelectorItem.hide();
+      return;
+    }
+
     const activeTask = this.taskManager.getActiveTask();
     const activeLabel = activeTask?.name ?? this.taskManager.getActiveTaskLabel();
 
@@ -118,6 +138,11 @@ export class StatusBarController implements vscode.Disposable {
    * Updates the Play / Stop toggle status bar item depending on whether the selected task is running.
    */
   private updatePlayStop(): void {
+    if (!this.isStatusBarWidgetEnabled()) {
+      this.playStopItem.hide();
+      return;
+    }
+
     const activeTask = this.taskManager.getActiveTask();
     const activeLabel = activeTask?.name ?? this.taskManager.getActiveTaskLabel();
     const isRunning = this.taskManager.isSelectedTaskRunning();
@@ -143,7 +168,7 @@ export class StatusBarController implements vscode.Disposable {
    * Updates the Debug status bar item visibility and tooltip.
    */
   private updateDebug(): void {
-    if (!this.isDebugButtonEnabled()) {
+    if (!this.isStatusBarWidgetEnabled() || !this.isDebugButtonEnabled()) {
       this.debugItem.hide();
       return;
     }

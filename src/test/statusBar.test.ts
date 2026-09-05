@@ -24,6 +24,7 @@ describe('StatusBarController', () => {
     const config = mockEnv.vscodeModule.workspace.getConfiguration(CONFIG_SECTION);
     await config.update(CONFIG_KEYS.SHOW_DEBUG_BUTTON, undefined);
     await config.update(CONFIG_KEYS.STATUS_BAR_PRIORITY, undefined);
+    await config.update(CONFIG_KEYS.SHOW_STATUS_BAR_WIDGET, undefined);
   });
 
   it('should initialize with default states when no task is selected', () => {
@@ -168,6 +169,35 @@ describe('StatusBarController', () => {
     // Re-enable debug button
     await config.update(CONFIG_KEYS.SHOW_DEBUG_BUTTON, true);
 
+    assert.strictEqual(debugItem.isVisible, true);
+
+    controller.dispose();
+  });
+
+  it('should hide or show all status bar items when showStatusBarWidget configuration is toggled', async () => {
+    const controller = new StatusBarController(taskManager, debugManager);
+
+    const selectorItem = controller.getTaskSelectorItem() as unknown as MockStatusBarItem;
+    const playStopItem = controller.getPlayStopItem() as unknown as MockStatusBarItem;
+    const debugItem = controller.getDebugItem() as unknown as MockStatusBarItem;
+
+    assert.strictEqual(selectorItem.isVisible, true);
+    assert.strictEqual(playStopItem.isVisible, true);
+    assert.strictEqual(debugItem.isVisible, true);
+
+    // Disable status bar widget
+    const config = mockEnv.vscodeModule.workspace.getConfiguration(CONFIG_SECTION);
+    await config.update(CONFIG_KEYS.SHOW_STATUS_BAR_WIDGET, false);
+
+    assert.strictEqual(selectorItem.isVisible, false);
+    assert.strictEqual(playStopItem.isVisible, false);
+    assert.strictEqual(debugItem.isVisible, false);
+
+    // Re-enable status bar widget
+    await config.update(CONFIG_KEYS.SHOW_STATUS_BAR_WIDGET, true);
+
+    assert.strictEqual(selectorItem.isVisible, true);
+    assert.strictEqual(playStopItem.isVisible, true);
     assert.strictEqual(debugItem.isVisible, true);
 
     controller.dispose();

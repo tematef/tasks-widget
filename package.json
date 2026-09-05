@@ -96,13 +96,15 @@
       "tasks-widget-view-container": [
         {
           "id": "tasksWidget.sidebarView",
-          "name": "Tasks Runner"
+          "name": "Tasks Runner",
+          "when": "config.tasksWidget.showActivityBarView"
         }
       ],
       "explorer": [
         {
           "id": "tasksWidget.explorerView",
-          "name": "Tasks Runner"
+          "name": "Tasks Runner",
+          "when": "config.tasksWidget.showExplorerView"
         }
       ]
     },
@@ -160,6 +162,21 @@
     "configuration": {
       "title": "Task Dropdown & Runner Widget",
       "properties": {
+        "tasksWidget.showStatusBarWidget": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the task dropdown selector and run/stop/debug controls in the status bar."
+        },
+        "tasksWidget.showActivityBarView": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the dedicated Tasks Runner icon and view in the Activity Bar."
+        },
+        "tasksWidget.showExplorerView": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the collapsible Tasks Runner view in the Explorer sidebar."
+        },
         "tasksWidget.showDebugButton": {
           "type": "boolean",
           "default": true,
