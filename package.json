@@ -98,55 +98,61 @@
           "id": "tasksWidget.sidebarView",
           "name": "Tasks Runner"
         }
+      ],
+      "explorer": [
+        {
+          "id": "tasksWidget.explorerView",
+          "name": "Tasks Runner"
+        }
       ]
     },
     "menus": {
       "view/title": [
         {
           "command": "tasksWidget.runSelectedTask",
-          "when": "view == tasksWidget.sidebarView",
+          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
           "group": "navigation@1"
         },
         {
           "command": "tasksWidget.debugSelectedTask",
-          "when": "view == tasksWidget.sidebarView",
+          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
           "group": "navigation@2"
         },
         {
           "command": "tasksWidget.stopSelectedTask",
-          "when": "view == tasksWidget.sidebarView",
+          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
           "group": "navigation@3"
         },
         {
           "command": "tasksWidget.addNewTask",
-          "when": "view == tasksWidget.sidebarView",
+          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
           "group": "navigation@4"
         },
         {
           "command": "tasksWidget.refreshTasks",
-          "when": "view == tasksWidget.sidebarView",
+          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
           "group": "navigation@5"
         }
       ],
       "view/item/context": [
         {
           "command": "tasksWidget.runTreeTask",
-          "when": "view == tasksWidget.sidebarView && viewItem == idleTaskItem",
+          "when": "(view == tasksWidget.sidebarView || view == tasksWidget.explorerView) && viewItem == idleTaskItem",
           "group": "inline@1"
         },
         {
           "command": "tasksWidget.stopSelectedTask",
-          "when": "view == tasksWidget.sidebarView && viewItem == runningTaskItem",
+          "when": "(view == tasksWidget.sidebarView || view == tasksWidget.explorerView) && viewItem == runningTaskItem",
           "group": "inline@1"
         },
         {
           "command": "tasksWidget.debugTreeTask",
-          "when": "view == tasksWidget.sidebarView",
+          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
           "group": "inline@2"
         },
         {
           "command": "tasksWidget.editTreeTask",
-          "when": "view == tasksWidget.sidebarView",
+          "when": "view == tasksWidget.sidebarView || view == tasksWidget.explorerView",
           "group": "inline@3"
         }
       ]
