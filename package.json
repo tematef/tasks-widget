@@ -79,7 +79,9 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node --test out/test/*.test.js"
+    "test": "npm run compile && node --test out/test/*.test.js",
+    "package": "npx @vscode/vsce package --allow-star-activation",
+    "build:vsix": "npx @vscode/vsce package --allow-star-activation"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
