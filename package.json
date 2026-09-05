@@ -1,9 +1,9 @@
 {
-  "name": "tasks-widget",
-  "displayName": "Task Dropdown & Runner Widget",
-  "description": "IntelliJ IDEA-style Run Configuration and Task Dropdown widget in the VS Code status bar",
+  "name": "tasks-runner",
+  "displayName": "Task Runner",
+  "description": "IntelliJ IDEA-style Run Configuration and Task Dropdown widget in the VS Code status bar and Activity Bar",
   "version": "0.0.2",
-  "publisher": "tasks-widget",
+  "publisher": "tasks-runner",
   "engines": {
     "vscode": "^1.85.0"
   },
