@@ -27,12 +27,6 @@ export async function activate(
   const statusBarController = new StatusBarController(taskManager, debugManager);
   const quickPickController = new QuickPickController(taskManager, taskConfigManager);
 
-  // Restore active task from workspace state if previously saved
-  try {
-    await taskManager.restoreActiveTask();
-  } catch {
-    // Graceful fallback if task discovery fails initially
-  }
 
   // 1. Select Task (opens QuickPick dropdown)
   const selectTaskCommand = vscode.commands.registerCommand(
@@ -180,6 +174,13 @@ export async function activate(
     debugTreeTaskCommand,
     editTreeTaskCommand
   );
+
+  // Restore active task from workspace state if previously saved
+  try {
+    await taskManager.restoreActiveTask();
+  } catch {
+    // Graceful fallback if task discovery fails initially
+  }
 
   return {
     taskManager,

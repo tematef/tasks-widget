@@ -11,9 +11,25 @@
     "Other"
   ],
   "main": "./out/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tematef/tasks-widget.git"
+  },
   "activationEvents": [
-    "*",
-    "onStartupFinished"
+    "onStartupFinished",
+    "onView:tasksWidget.sidebarView",
+    "onCommand:tasksWidget.selectTask",
+    "onCommand:tasksWidget.runSelectedTask",
+    "onCommand:tasksWidget.stopSelectedTask",
+    "onCommand:tasksWidget.debugSelectedTask",
+    "onCommand:tasksWidget.addNewTask",
+    "onCommand:tasksWidget.editTask",
+    "onCommand:tasksWidget.configureTasks",
+    "onCommand:tasksWidget.refreshTasks",
+    "onCommand:tasksWidget.runTreeTask",
+    "onCommand:tasksWidget.debugTreeTask",
+    "onCommand:tasksWidget.editTreeTask",
+    "*"
   ],
   "contributes": {
     "commands": [
